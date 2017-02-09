@@ -38,43 +38,11 @@ module LazyMapper
     #                         # one_to_many :friends, :min => 1, :max => 3
     #   * has 3, :friends
     #                         # one_to_many :friends, :min => 3, :max => 3
-    #   * has 1, :friend, :class_name => 'User'
-    #                         # one_to_one :friend, :class_name => 'User'
-    #   * has 3, :friends, :through => :friendships
-    #                         # one_to_many :friends, :through => :friendships
-    #   * has n, :friendships => :friends
-    #                         # identical to above example
     #
-    # @param cardinality <Fixnum, Bignum, Infinity, Range>
-    #   cardinality that defines the association type and constraints
-    # @param name <Symbol>  the name that the association will be referenced by
-    # @param opts <Hash>    an options hash
-    #
-    # @option :through<Symbol>  A association that this join should go through to form
-    #       a many-to-many association
-    # @option :class_name<String> The name of the class to associate with, if omitted
-    #       then the association name is assumed to match the class name
-    # @option :remote_name<Symbol> In the case of a :through option being present, the
-    #       name of the relationship on the other end of the :through-relationship
-    #       to be linked to this relationship.
-    #
-    # @return <LazyMapper::Association::Relationship> the relationship that was
-    #   created to reflect either a one-to-one, one-to-many or many-to-many
-    #   relationship
-    # @raise <ArgumentError> if the cardinality was not understood. Should be a
-    #   Fixnum, Bignum, Infinity(n) or Range
-    #
-    # @api public
     def has(cardinality, name, options = {})
       options = options.merge(extract_min_max(cardinality))
       options = options.merge(extract_throughness(name))
 
-      # do not remove this. There is alot of confusion on people's
-      # part about what the first argument to has() is.  For the record it
-      # is the cardinality, or rather the min and max number of results
-      # the association will return.  It is not, as has been assumed,
-      # the number of results on the left and right hand side of the
-      # reltionship.
       raise ArgumentError, 'Cardinality may not be n..n.  The cardinality specifies the min/max number of results from the association' if options[:min] == n && options[:max] == n
 
       relationship = if options[:max] == 1
@@ -82,40 +50,8 @@ module LazyMapper
       else
         one_to_many(options.delete(:name), options)
       end
-
-      # Please leave this in - I will release contextual serialization soon
-      # which requires this -- guyvdb
-      # TODO convert this to a hook in the plugin once hooks work on class
-      # methods
-      self.init_has_relationship_for_serialization(relationship) if self.respond_to?(:init_has_relationship_for_serialization)
-
       relationship
     end
-
-    #
-    # A shorthand, clear syntax for defining many-to-one resource relationships.
-    #
-    # @example [Usage]
-    #   * belongs_to :user                          # many_to_one, :friend
-    #   * belongs_to :friend, :class_name => 'User'  # many_to_one :friends
-    #
-    # @param name<Symbol> The name that the association will be referenced by
-    # @param opts<Hash>   An options hash (see below)
-    # @see #has
-    #
-    # @return <LazyMapper::Association::ManyToOne> The association created
-    #   should not be accessed directly
-    #
-    # @api public
-    def belongs_to(name, options={})
-      relationship = many_to_one(name, options)
-      # Please leave this in - I will release contextual serialization soon
-      # which requires this -- guyvdb
-      # TODO convert this to a hook in the plugin once hooks work on class
-      # methods
-      self.init_belongs_relationship_for_serialization(relationship) if self.respond_to?(:init_belongs_relationship_for_serialization)
-    end
-
 
   private
 
