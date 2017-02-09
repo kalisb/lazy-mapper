@@ -32,7 +32,7 @@ describe LazyMapper::AutoMigrations do
       property :age, Integer
     end
 
-    @cat.should respond_to(:auto_migrate!)
+    expect(@cat).to respond_to(:auto_migrate!)
   end
 
   it "should add the #auto_upgrade! method on a mixin" do
@@ -43,7 +43,7 @@ describe LazyMapper::AutoMigrations do
       property :age, Integer
     end
 
-    @cat.should respond_to(:auto_upgrade!)
+    expect(@cat).to respond_to(:auto_upgrade!)
   end
 
   describe "#auto_migrate" do
@@ -56,7 +56,7 @@ describe LazyMapper::AutoMigrations do
 
       models.each do |model|
         LazyMapper::Resource.descendents << model
-        model.should_receive(:auto_migrate!).with(@repository_name)
+        allow(model).to receive(:auto_migrate!).with(@repository_name)
       end
 
       LazyMapper::AutoMigrator.auto_migrate(@repository_name)
@@ -72,7 +72,7 @@ describe LazyMapper::AutoMigrations do
 
       models.each do |model|
         LazyMapper::Resource.descendents << model
-        model.should_receive(:auto_upgrade!).with(@repository_name)
+        allow(model).to receive(:auto_upgrade!).with(@repository_name)
       end
 
       LazyMapper::AutoMigrator.auto_upgrade(@repository_name)

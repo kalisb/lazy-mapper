@@ -34,33 +34,33 @@ describe "LazyMapper::Resource" do
 
   describe "storage names" do
     it "should use its class name by default" do
-      Planet.storage_name.should == "planets"
+      expect(Planet.storage_name).to eq "planets"
     end
   end
 
   it "should require a key" do
-    lambda do
+    expect do
       LazyMapper::Resource.new("stuff") do
         property :name, String
       end.new
-    end.should raise_error(LazyMapper::IncompleteResourceError)
+    end.to raise_error(LazyMapper::IncompleteResourceError)
   end
 
   it "should return an instance of the created object" do
-     Planet.create!(:name => 'Venus', :age => 1_000_000, :core => nil, :id => 42).should be_a_kind_of(Planet)
+     expect(Planet.create!(:name => 'Venus', :age => 1_000_000, :core => nil, :id => 42)).to be_a_kind_of(Planet)
   end
 
   it 'should provide persistance methods' do
    planet = Planet.new
-   planet.should respond_to(:new_record?)
-   planet.should respond_to(:save)
-   planet.should respond_to(:destroy)
+   expect(planet).to respond_to(:new_record?)
+   expect(planet).tо respond_to(:save)
+   expect(planet).tо respond_to(:destroy)
  end
 
  it "should have attributes" do
    attributes = { :name => 'Jupiter', :age => 1_000_000, :core => nil, :id => 42, :type => Planet }
    jupiter = Planet.new(attributes)
-   jupiter.attributes.should == attributes
+   expect(jupiter.attributes).to eq attributes
 end
 
 end

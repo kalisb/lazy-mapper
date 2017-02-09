@@ -145,30 +145,6 @@ describe "LazyMapper::Associations" do
             has n..n, :subsidiaries, :class_name => 'Manufacturer'
           end
         end.to raise_error(ArgumentError)
-<<<<<<< Updated upstream
-      end
-    end
-  end
-
-  describe ".belongs_to" do
-    it "should create a basic many-to-one association" do
-      allow(Manufacturer).to receive(:many_to_one).
-        with(:vehicle,{}).
-        and_return(@relationship)
-      class Manufacturer
-        belongs_to :vehicle
-      end
-    end
-
-    it "should create a many-to-one association with options" do
-      allow(Manufacturer).to receive(:many_to_one).
-        with(:vehicle,{:class_name => 'Car'}).
-        and_return(@relationship)
-      class Manufacturer
-        belongs_to :vehicle,
-          :class_name => 'Car'
-=======
->>>>>>> Stashed changes
       end
     end
   end
