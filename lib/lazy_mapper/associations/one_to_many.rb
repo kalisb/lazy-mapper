@@ -57,9 +57,7 @@ module LazyMapper
         relationship
       end
 
-      class Proxy
-        instance_methods.each { |m| undef_method m unless %w[ __id__ __send__ class kind_of? should should_not ].include?(m) }
-
+      class Proxy < BasicObject
         def replace(resources)
           each { |resource| remove_resource(resource) }
           append_resource(resources)
