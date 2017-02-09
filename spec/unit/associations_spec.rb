@@ -13,10 +13,7 @@ describe "LazyMapper::Associations" do
 
     class C
       include LazyMapper::Resource
-
-      repository(:default) do
-        has 1, :b
-      end
+      has 1, :b
     end
 
     class D
@@ -31,52 +28,41 @@ describe "LazyMapper::Associations" do
       has 1, :a
     end
 
-    it "should assume the default repository when no arguments are passed" do
-      lambda do
-        C.relationships
-      end.should_not raise_error
-    end
-
-    it "should return the right set of relationships given the repository name" do
-      C.relationships.should be_empty
-      C.relationships(:default).should_not be_empty
-    end
-
-    it "should return the right set of relationships given the inheritance" do
-      E.relationships.should have(1).entries
-      D.relationships.should have(1).entries
-      F.relationships.should have(2).entries
+    it "should return the right set of relationships" do
+      expect(C.relationships).not_to be_empty
     end
   end
 
   describe ".has" do
 
     it "should allow a declaration" do
-      lambda do
+      expect do
         class Manufacturer
+          include LazyMapper::Resource
           has 1, :halo_car
         end
-      end.should_not raise_error
+      end.not_to raise_error
     end
 
     it "should not allow a constraint that is not a Range, Fixnum, Bignum or Infinity" do
-      lambda do
+      expect do
         class Manufacturer
+          include LazyMapper::Resource
           has '1', :halo_car
         end
-      end.should raise_error(ArgumentError)
+      end.to raise_error(ArgumentError)
     end
 
     it "should not allow a constraint where the min is larger than the max" do
-      lambda do
+      expect do
         class Manufacturer
           has 1..0, :halo_car
         end
-      end.should raise_error(ArgumentError)
+      end.to raise_error(ArgumentError)
     end
 
     it "should not allow overwriting of the auto assigned min/max values with keys" do
-      Manufacturer.should_receive(:one_to_many).
+      allow(Manufacturer).to receive(:one_to_many).
         with(:vehicles, {:min=>1, :max=>2}).
         and_return(@relationship)
       class Manufacturer
@@ -86,7 +72,7 @@ describe "LazyMapper::Associations" do
 
     describe "one-to-one syntax" do
       it "should create a basic one-to-one association with fixed constraint" do
-        Manufacturer.should_receive(:one_to_one).
+        allow(Manufacturer).to receive(:one_to_one).
           with(:halo_car, { :min => 1, :max => 1 }).
           and_return(@relationship)
         class Manufacturer
@@ -95,7 +81,7 @@ describe "LazyMapper::Associations" do
       end
 
       it "should create a basic one-to-one association with min/max constraints" do
-        Manufacturer.should_receive(:one_to_one).
+        allow(Manufacturer).to receive(:one_to_one).
           with(:halo_car, { :min => 0, :max => 1 }).
           and_return(@relationship)
         class Manufacturer
@@ -104,7 +90,7 @@ describe "LazyMapper::Associations" do
       end
 
       it "should create a one-to-one association with options" do
-        Manufacturer.should_receive(:one_to_one).
+        allow(Manufacturer).to receive(:one_to_one).
           with(:halo_car, {:class_name => 'Car', :min => 1, :max => 1 }).
           and_return(@relationship)
         class Manufacturer
@@ -116,7 +102,7 @@ describe "LazyMapper::Associations" do
 
     describe "one-to-many syntax" do
       it "should create a basic one-to-many association with no constraints" do
-        Manufacturer.should_receive(:one_to_many).
+        allow(Manufacturer).to receive(:one_to_many).
           with(:vehicles,{}).
           and_return(@relationship)
         class Manufacturer
@@ -125,7 +111,7 @@ describe "LazyMapper::Associations" do
       end
 
       it "should create a one-to-many association with fixed constraint" do
-        Manufacturer.should_receive(:one_to_many).
+        allow(Manufacturer).to receive(:one_to_many).
           with(:vehicles,{:min=>4, :max=>4}).
           and_return(@relationship)
         class Manufacturer
@@ -134,7 +120,7 @@ describe "LazyMapper::Associations" do
       end
 
       it "should create a one-to-many association with min/max constraints" do
-        Manufacturer.should_receive(:one_to_many).
+        allow(Manufacturer).to receive(:one_to_many).
           with(:vehicles,{:min=>2, :max=>4}).
           and_return(@relationship)
         class Manufacturer
@@ -143,7 +129,7 @@ describe "LazyMapper::Associations" do
       end
 
       it "should create a one-to-many association with options" do
-        Manufacturer.should_receive(:one_to_many).
+        allow(Manufacturer).to receive(:one_to_many).
           with(:vehicles,{:min=>1, :max=>@n, :class_name => 'Car'}).
           and_return(@relationship)
         class Manufacturer
@@ -154,27 +140,18 @@ describe "LazyMapper::Associations" do
 
       # do not remove or change this spec.
       it "should raise an exception when n..n is used for the cardinality" do
-        lambda do
+        expect do
           class Manufacturer
             has n..n, :subsidiaries, :class_name => 'Manufacturer'
           end
-        end.should raise_error(ArgumentError)
-      end
-
-      it "should create one-to-many association and pass the :through option if specified" do
-        Vehicle.should_receive(:one_to_many).
-          with(:suppliers,{:through => :manufacturers}).
-          and_return(@relationship)
-        class Vehicle
-          has n, :suppliers, :through => :manufacturers
-        end
+        end.to raise_error(ArgumentError)
       end
     end
   end
 
   describe ".belongs_to" do
     it "should create a basic many-to-one association" do
-      Manufacturer.should_receive(:many_to_one).
+      allow(Manufacturer).to receive(:many_to_one).
         with(:vehicle,{}).
         and_return(@relationship)
       class Manufacturer
@@ -183,7 +160,7 @@ describe "LazyMapper::Associations" do
     end
 
     it "should create a many-to-one association with options" do
-      Manufacturer.should_receive(:many_to_one).
+      allow(Manufacturer).to receive(:many_to_one).
         with(:vehicle,{:class_name => 'Car'}).
         and_return(@relationship)
       class Manufacturer
