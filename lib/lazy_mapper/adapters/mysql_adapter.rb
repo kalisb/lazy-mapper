@@ -119,4 +119,6 @@ module LazyMapper
 
     end # class MysqlAdapter
   end # module Adapters
+  class Mysql
+  end
 end # module LazyMapper
