@@ -3,6 +3,9 @@ require 'pathname'
 require Pathname(__FILE__).dirname.expand_path.parent + 'lib/lazy_mapper'
 require LazyMapper.root / 'spec' / 'lib' / 'mock_adapter'
 
+RSpec.configure do |config|
+  config.raise_errors_for_deprecations!
+end
 # setup mock adapters
 [ :default ].each do |repository_name|
   LazyMapper.setup(repository_name, "mock://localhost/#{repository_name}")

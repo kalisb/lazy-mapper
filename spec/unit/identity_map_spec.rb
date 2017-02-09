@@ -104,7 +104,7 @@ describe "Second Level Caching" do
     cache = @mock_class.new
     betsy = Cow.new(:id => 23, :name => 'Betsy')
 
-    cache.stub!(:set)
+    cache.stub(:set)
     cache.should_receive(:delete).with(betsy.key).and_return(betsy)
 
     map = LazyMapper::IdentityMap.new(cache)
@@ -116,7 +116,7 @@ describe "Second Level Caching" do
     cache = @mock_class.new
     betsy = Cow.new(:id => 23, :name => 'Betsy')
 
-    cache.stub!(:set)
+    cache.stub(:set)
     cache.should_not_receive(:get)
 
     map = LazyMapper::IdentityMap.new(cache)

@@ -48,7 +48,6 @@ describe "LazyMapper::Resource" do
 
   it "should return an instance of the created object" do
      Planet.create!(:name => 'Venus', :age => 1_000_000, :core => nil, :id => 42).should be_a_kind_of(Planet)
-     puts Planet.age
   end
 
   it 'should provide persistance methods' do
@@ -61,7 +60,6 @@ describe "LazyMapper::Resource" do
  it "should have attributes" do
    attributes = { :name => 'Jupiter', :age => 1_000_000, :core => nil, :id => 42, :type => Planet }
    jupiter = Planet.new(attributes)
-   Planet.age = 0
    jupiter.attributes.should == attributes
 end
 

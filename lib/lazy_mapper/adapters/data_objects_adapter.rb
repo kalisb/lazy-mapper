@@ -89,10 +89,9 @@ module LazyMapper
       # @return <LazyMapper::TypeMap> default TypeMap for data objects adapters.
       def self.type_map
         @type_map ||= TypeMap.new(super) do |tm|
-          tm.map(Fixnum).to('INT')
+          tm.map(Integer).to('INT')
           tm.map(String).to('VARCHAR').with(:size => Property::DEFAULT_LENGTH)
           tm.map(Class).to('VARCHAR').with(:size => Property::DEFAULT_LENGTH)
-          tm.map(DM::Discriminator).to('VARCHAR').with(:size => Property::DEFAULT_LENGTH)
           tm.map(BigDecimal).to('DECIMAL').with(:scale => Property::DEFAULT_SCALE, :precision => Property::DEFAULT_PRECISION)
           tm.map(Float).to('FLOAT').with(:scale => Property::DEFAULT_SCALE, :precision => Property::DEFAULT_PRECISION)
           tm.map(DateTime).to('DATETIME')
@@ -100,7 +99,6 @@ module LazyMapper
           tm.map(Time).to('TIMESTAMP')
           tm.map(TrueClass).to('BOOLEAN')
           tm.map(Object).to('TEXT')
-          tm.map(DM::Text).to('TEXT')
         end
       end
 
@@ -260,7 +258,7 @@ module LazyMapper
 
       # TODO: move to dm-more/dm-transactions
       def transaction_primitive
-        DataObjects::Transaction.create_for_uri(@uri)
+        LazyMapper::Transaction.create_for_uri(@uri)
       end
 
       protected
@@ -281,9 +279,9 @@ module LazyMapper
         database = uri_or_options.delete(:database)
         query = uri_or_options.to_a.map { |pair| pair.join('=') }.join('&')
         query = nil if query == ""
-
+        puts query
         return Addressable::URI.new(
-          adapter, user, password, host, port, database, query, nil
+          :scheme => adapter, :user => user, :password => password, :host => host, :port => port, :path => database,  :query => query
         )
       end
 
@@ -292,9 +290,9 @@ module LazyMapper
         if within_transaction?
           current_transaction.primitive_for(self).connection
         else
-          # DataObjects::Connection.new(uri) will give you back the right
+          # LazyMapper::Connection.new(uri) will give you back the right
           # driver based on the Uri#scheme.
-          DataObjects::Connection.new(@uri)
+          LazyMapper::Connection.new(@uri)
         end
       end
 
@@ -675,10 +673,6 @@ module LazyMapper
             schema[:scale]     = property.scale
             schema[:precision] = property.precision
           end
-
-          schema[:nullable?] = property.nullable?
-          schema[:serial?]   = property.serial?
-          schema[:default]   = property.default unless property.default.nil? || property.default.respond_to?(:call)
 
           schema
         end

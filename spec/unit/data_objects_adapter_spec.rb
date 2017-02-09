@@ -47,35 +47,35 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
         @repository = Plupp.repository
         @repository.stub(:adapter).and_return(@adapter)
         @adapter.stub(:create_connection).and_return(@connection)
-        @adapter.should_receive(:is_a?).any_number_of_times.with(LazyMapper::Adapters::DataObjectsAdapter).and_return(true)
+        @adapter.stub(:is_a?).with(LazyMapper::Adapters::DataObjectsAdapter).and_return(true)
       end
 
       it "should accept a single String argument with or without options hash" do
-        @connection.should_receive(:create_command).twice.with("SELECT * FROM plupps").and_return(@command)
-        @command.should_receive(:set_types).twice.with([Fixnum, String])
-        @command.should_receive(:execute_reader).twice.and_return(@reader)
-        Plupp.should_receive(:repository).any_number_of_times.and_return(@repository)
-        Plupp.should_receive(:repository).any_number_of_times.with(:plupp_repo).and_return(@repository)
+        @connection.stub(:create_command).twice.with("SELECT * FROM plupps").and_return(@command)
+        @command.stub(:set_types).twice.with([Integer, String])
+        @command.stub(:execute_reader).twice.and_return(@reader)
+        Plupp.stub(:repository).and_return(@repository)
+        Plupp.stub(:repository).with(:plupp_repo).and_return(@repository)
         Plupp.find_by_sql("SELECT * FROM plupps").to_a
         Plupp.find_by_sql("SELECT * FROM plupps", :repository => :plupp_repo).to_a
       end
 
       it "should accept an Array argument with or without options hash" do
-        @connection.should_receive(:create_command).twice.with("SELECT * FROM plupps WHERE plur = ?").and_return(@command)
-        @command.should_receive(:set_types).twice.with([Fixnum, String])
-        @command.should_receive(:execute_reader).twice.with("my pretty plur").and_return(@reader)
-        Plupp.should_receive(:repository).any_number_of_times.and_return(@repository)
-        Plupp.should_receive(:repository).any_number_of_times.with(:plupp_repo).and_return(@repository)
+        @connection.stub(:create_command).twice.with("SELECT * FROM plupps WHERE plur = ?").and_return(@command)
+        @command.stub(:set_types).twice.with([Integer, String])
+        @command.stub(:execute_reader).twice.with("my pretty plur").and_return(@reader)
+        Plupp.stub(:repository).and_return(@repository)
+        Plupp.stub(:repository).with(:plupp_repo).and_return(@repository)
         Plupp.find_by_sql(["SELECT * FROM plupps WHERE plur = ?", "my pretty plur"]).to_a
         Plupp.find_by_sql(["SELECT * FROM plupps WHERE plur = ?", "my pretty plur"], :repository => :plupp_repo).to_a
       end
 
       it "should accept a Query argument with or without options hash" do
-        @connection.should_receive(:create_command).twice.with("SELECT \"name\" FROM \"plupps\" WHERE \"name\" = ?").and_return(@command)
-        @command.should_receive(:set_types).twice.with([Fixnum, String])
-        @command.should_receive(:execute_reader).twice.with(Plupp.properties[:name]).and_return(@reader)
-        Plupp.should_receive(:repository).any_number_of_times.and_return(@repository)
-        Plupp.should_receive(:repository).any_number_of_times.with(:plupp_repo).and_return(@repository)
+        @connection.stub(:create_command).twice.with("SELECT \"name\" FROM \"plupps\" WHERE \"name\" = ?").and_return(@command)
+        @command.stub(:set_types).twice.with([Integer, String])
+        @command.stub(:execute_reader).twice.with(Plupp.properties[:name]).and_return(@reader)
+        Plupp.stub(:repository).and_return(@repository)
+        Plupp.stub(:repository).with(:plupp_repo).and_return(@repository)
         Plupp.find_by_sql(LazyMapper::Query.new(@repository, Plupp, "name" => "my pretty plur", :fields => ["name"])).to_a
         Plupp.find_by_sql(LazyMapper::Query.new(@repository, Plupp, "name" => "my pretty plur", :fields => ["name"]), :repository => :plupp_repo).to_a
       end
@@ -84,14 +84,14 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
         non_do_adapter = double("non do adapter")
         non_do_repo = double("non do repo")
         non_do_repo.stub(:adapter).and_return(non_do_adapter)
-        Plupp.should_receive(:repository).any_number_of_times.with(:plupp_repo).and_return(non_do_repo)
+        Plupp.stub(:repository).with(:plupp_repo).and_return(non_do_repo)
         Proc.new do
           Plupp.find_by_sql(:repository => :plupp_repo)
         end.should raise_error(Exception, /DataObjectsAdapter/)
       end
 
       it "requires some kind of query to work at all" do
-        Plupp.should_receive(:repository).any_number_of_times.with(:plupp_repo).and_return(@repository)
+        Plupp.stub(:repository).with(:plupp_repo).and_return(@repository)
         Proc.new do
           Plupp.find_by_sql(:repository => :plupp_repo)
         end.should raise_error(Exception, /requires a query/)
@@ -147,67 +147,67 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
     end
 
     it 'should use only dirty properties' do
-      @resource.should_receive(:dirty_attributes).with(no_args).and_return([ @property ])
+      @resource.stub(:dirty_attributes).with(no_args).and_return([ @property ])
       @adapter.create(@repository, @resource)
     end
 
     it 'should use the properties field accessors' do
-      @property.should_receive(:field).with(:default).and_return('property')
+      @property.stub(:field).with(:default).and_return('property')
       @adapter.create(@repository, @resource)
     end
 
     it 'should use the bind values' do
-      @property.should_receive(:instance_variable_name).with(no_args).and_return('@property')
-      @resource.should_receive(:instance_variable_get).with('@property').and_return('bind value')
+      @property.stub(:instance_variable_name).with(no_args).and_return('@property')
+      @resource.stub(:instance_variable_get).with('@property').and_return('bind value')
       @adapter.create(@repository, @resource)
     end
 
     it 'should generate an SQL statement when supports_returning? is false' do
       statement = 'INSERT INTO "models" ("property") VALUES (?)'
-      @adapter.should_receive(:supports_returning?).with(no_args).and_return(false)
-      @adapter.should_receive(:execute).with(statement, 'bind value').and_return(@result)
+      @adapter.stub(:supports_returning?).with(no_args).and_return(false)
+      @adapter.stub(:execute).with(statement, 'bind value').and_return(@result)
       @adapter.create(@repository, @resource)
     end
 
     it 'should generate an SQL statement when supports_returning? is true' do
       statement = 'INSERT INTO "models" ("property") VALUES (?) RETURNING "property"'
-      @property.should_receive(:serial?).with(no_args).and_return(true)
-      @adapter.should_receive(:supports_returning?).with(no_args).and_return(true)
-      @adapter.should_receive(:execute).with(statement, 'bind value').and_return(@result)
+      @property.stub(:serial?).with(no_args).and_return(true)
+      @adapter.stub(:supports_returning?).with(no_args).and_return(true)
+      @adapter.stub(:execute).with(statement, 'bind value').and_return(@result)
       @adapter.create(@repository, @resource)
     end
 
     it 'should generate an SQL statement when supports_default_values? is true' do
       statement = 'INSERT INTO "models" DEFAULT VALUES'
-      @resource.should_receive(:dirty_attributes).with(no_args).and_return([])
-      @adapter.should_receive(:supports_default_values?).with(no_args).and_return(true)
-      @adapter.should_receive(:execute).with(statement).and_return(@result)
+      @resource.stub(:dirty_attributes).with(no_args).and_return([])
+      @adapter.stub(:supports_default_values?).with(no_args).and_return(true)
+      @adapter.stub(:execute).with(statement).and_return(@result)
       @adapter.create(@repository, @resource)
     end
 
     it 'should generate an SQL statement when supports_default_values? is false' do
       statement = 'INSERT INTO "models" () VALUES ()'
-      @resource.should_receive(:dirty_attributes).with(no_args).and_return([])
-      @adapter.should_receive(:supports_default_values?).with(no_args).and_return(false)
-      @adapter.should_receive(:execute).with(statement).and_return(@result)
+      @resource.stub(:dirty_attributes).with(no_args).and_return([])
+      @adapter.stub(:supports_default_values?).with(no_args).and_return(false)
+      @adapter.stub(:execute).with(statement).and_return(@result)
       @adapter.create(@repository, @resource)
     end
 
     it 'should return false if number of rows created is 0' do
-      @result.should_receive(:to_i).with(no_args).and_return(0)
+      @result.stub(:to_i).with(no_args).and_return(0)
       @adapter.create(@repository, @resource).should be false
     end
 
     it 'should return true if number of rows created is 1' do
-      @result.should_receive(:to_i).with(no_args).and_return(1)
+      @result.stub(:to_i).with(no_args).and_return(1)
       @adapter.create(@repository, @resource).should be true
     end
 
     it 'should set the resource primary key if the model key size is 1 and the key is serial' do
       @model.key.size.should == 1
-      @property.should_receive(:serial?).and_return(true)
-      @result.should_receive(:insert_id).and_return(111)
-      @resource.should_receive(:instance_variable_set).with('@property', 111)
+      @property.stub(:serial?).and_return(true)
+      @result.stub(:insert_id).and_return(111)
+      @resource.stub(:instance_variable_set).with('@property', 111)
       @adapter.create(@repository, @resource)
     end
   end
@@ -227,65 +227,65 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
       @command    = double('command', :set_types => nil, :execute_reader => @reader)
       @connection = double('connection', :close => true, :create_command => @command)
 
-      DataObjects::Connection.stub(:new).and_return(@connection)
+      LazyMapper::Connection.stub(:new).and_return(@connection)
       LazyMapper::Collection.stub(:new).and_return(@collection)
     end
 
     it 'should lookup the model properties with the repository' do
-      @model.should_receive(:properties).with(:default).and_return(@properties)
+      @model.stub(:properties).with(:default).and_return(@properties)
       @adapter.read(@repository, @model, @key)
     end
 
     it 'should use the model default properties' do
-      @properties.should_receive(:defaults).with(no_args).and_return([ @property ])
+      @properties.stub(:defaults).with(no_args).and_return([ @property ])
       @adapter.read(@repository, @model, @key)
     end
 
     it 'should create a collection under the hood for retrieving the resource' do
-      LazyMapper::Collection.should_receive(:new).with(@repository, @model, { @property => 0 }).and_return(@collection)
-      @reader.should_receive(:next!).and_return(true)
-      @reader.should_receive(:values).with(no_args).and_return({ :property => 'value' })
-      @collection.should_receive(:load).with({ :property => 'value' })
-      @collection.should_receive(:first).with(no_args).and_return(@resource)
+      LazyMapper::Collection.stub(:new).with(@repository, @model, { @property => 0 }).and_return(@collection)
+      @reader.stub(:next!).and_return(true)
+      @reader.stub(:values).with(no_args).and_return({ :property => 'value' })
+      @collection.stub(:load).with({ :property => 'value' })
+      @collection.stub(:first).with(no_args).and_return(@resource)
       @adapter.read(@repository, @model, @key).should == @resource
     end
 
     it 'should use the bind values' do
-      @command.should_receive(:execute_reader).with(@key).and_return(@reader)
+      @command.stub(:execute_reader).with(@key).and_return(@reader)
       @adapter.read(@repository, @model, @key)
     end
 
     it 'should generate an SQL statement' do
       statement = 'SELECT "property" FROM "models" WHERE "property" = ? LIMIT 1'
-      @model.should_receive(:key).with(:default).and_return([ @property ])
-      @connection.should_receive(:create_command).with(statement).and_return(@command)
+      @model.stub(:key).with(:default).and_return([ @property ])
+      @connection.stub(:create_command).with(statement).and_return(@command)
       @adapter.read(@repository, @model, @key)
     end
 
     it 'should generate an SQL statement with composite keys' do
       other_property = double('other property')
-      other_property.should_receive(:field).with(:default).and_return('other')
+      other_property.stub(:field).with(:default).and_return('other')
 
-      @model.should_receive(:key).with(:default).and_return([ @property, other_property ])
+      @model.stub(:key).with(:default).and_return([ @property, other_property ])
 
       statement = 'SELECT "property" FROM "models" WHERE "property" = ? AND "other" = ? LIMIT 1'
-      @connection.should_receive(:create_command).with(statement).and_return(@command)
+      @connection.stub(:create_command).with(statement).and_return(@command)
 
       @adapter.read(@repository, @model, @key)
     end
 
     it 'should set the return types to the property primitives' do
-      @command.should_receive(:set_types).with([ @primitive ])
+      @command.stub(:set_types).with([ @primitive ])
       @adapter.read(@repository, @model, @key)
     end
 
     it 'should close the reader' do
-      @reader.should_receive(:close).with(no_args)
+      @reader.stub(:close).with(no_args)
       @adapter.read(@repository, @model, @key)
     end
 
     it 'should close the connection' do
-      @connection.should_receive(:close).with(no_args)
+      @connection.stub(:close).with(no_args)
       @adapter.read(@repository, @model, @key)
     end
   end
@@ -302,53 +302,53 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
     end
 
     it 'should use only dirty properties' do
-      @resource.should_receive(:dirty_attributes).with(no_args).and_return([ @property ])
+      @resource.stub(:dirty_attributes).with(no_args).and_return([ @property ])
       @adapter.update(@repository, @resource)
     end
 
     it 'should use the properties field accessors' do
-      @property.should_receive(:field).with(:default).twice.and_return('property')
+      @property.stub(:field).with(:default).twice.and_return('property')
       @adapter.update(@repository, @resource)
     end
 
     it 'should use the bind values' do
-      @property.should_receive(:instance_variable_name).with(no_args).twice.and_return('@property')
-      @resource.should_receive(:instance_variable_get).with('@property').twice.and_return('bind value')
-      @model.should_receive(:key).with(:default).and_return([ @property ])
-      @adapter.should_receive(:execute).with(anything, 'bind value', 'bind value').and_return(@result)
+      @property.stub(:instance_variable_name).with(no_args).twice.and_return('@property')
+      @resource.stub(:instance_variable_get).with('@property').twice.and_return('bind value')
+      @model.stub(:key).with(:default).and_return([ @property ])
+      @adapter.stub(:execute).with(anything, 'bind value', 'bind value').and_return(@result)
       @adapter.update(@repository, @resource)
     end
 
     it 'should generate an SQL statement' do
       statement = 'UPDATE "models" SET "property" = ? WHERE "property" = ?'
-      @adapter.should_receive(:execute).with(statement, anything, anything).and_return(@result)
+      @adapter.stub(:execute).with(statement, anything, anything).and_return(@result)
       @adapter.update(@repository, @resource)
     end
 
     it 'should generate an SQL statement with composite keys' do
       other_property = double('other property', :instance_variable_name => '@other')
-      other_property.should_receive(:field).with(:default).and_return('other')
+      other_property.stub(:field).with(:default).and_return('other')
 
-      @model.should_receive(:key).with(:default).and_return([ @property, other_property ])
+      @model.stub(:key).with(:default).and_return([ @property, other_property ])
 
       statement = 'UPDATE "models" SET "property" = ? WHERE "property" = ? AND "other" = ?'
-      @adapter.should_receive(:execute).with(statement, anything, anything, anything).and_return(@result)
+      @adapter.stub(:execute).with(statement, anything, anything, anything).and_return(@result)
 
       @adapter.update(@repository, @resource)
     end
 
     it 'should return false if number of rows updated is 0' do
-      @result.should_receive(:to_i).with(no_args).and_return(0)
+      @result.stub(:to_i).with(no_args).and_return(0)
       @adapter.update(@repository, @resource).should be false
     end
 
     it 'should return true if number of rows updated is 1' do
-      @result.should_receive(:to_i).with(no_args).and_return(1)
+      @result.stub(:to_i).with(no_args).and_return(1)
       @adapter.update(@repository, @resource).should be true
     end
 
     it 'should not try to update if there are no dirty attributes' do
-      @resource.should_receive(:dirty_attributes).with(no_args).and_return([])
+      @resource.stub(:dirty_attributes).with(no_args).and_return([])
       @adapter.update(@repository, @resource).should be false
     end
   end
@@ -366,46 +366,46 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
     end
 
     it 'should use the properties field accessors' do
-      @property.should_receive(:field).with(:default).and_return('property')
+      @property.stub(:field).with(:default).and_return('property')
       @adapter.delete(@repository, @resource)
     end
 
     it 'should use the bind values' do
-      @property.should_receive(:instance_variable_name).with(no_args).and_return('@property')
-      @resource.should_receive(:instance_variable_get).with('@property').and_return('bind value')
+      @property.stub(:instance_variable_name).with(no_args).and_return('@property')
+      @resource.stub(:instance_variable_get).with('@property').and_return('bind value')
 
-      @model.should_receive(:key).with(:default).and_return([ @property ])
+      @model.stub(:key).with(:default).and_return([ @property ])
 
-      @adapter.should_receive(:execute).with(anything, 'bind value').and_return(@result)
+      @adapter.stub(:execute).with(anything, 'bind value').and_return(@result)
 
       @adapter.delete(@repository, @resource)
     end
 
     it 'should generate an SQL statement' do
       statement = 'DELETE FROM "models" WHERE "property" = ?'
-      @adapter.should_receive(:execute).with(statement, anything).and_return(@result)
+      @adapter.stub(:execute).with(statement, anything).and_return(@result)
       @adapter.delete(@repository, @resource)
     end
 
     it 'should generate an SQL statement with composite keys' do
       other_property = double('other property', :instance_variable_name => '@other')
-      other_property.should_receive(:field).with(:default).and_return('other')
+      other_property.stub(:field).with(:default).and_return('other')
 
-      @model.should_receive(:key).with(:default).and_return([ @property, other_property ])
+      @model.stub(:key).with(:default).and_return([ @property, other_property ])
 
       statement = 'DELETE FROM "models" WHERE "property" = ? AND "other" = ?'
-      @adapter.should_receive(:execute).with(statement, anything, anything).and_return(@result)
+      @adapter.stub(:execute).with(statement, anything, anything).and_return(@result)
 
       @adapter.delete(@repository, @resource)
     end
 
     it 'should return false if number of rows deleted is 0' do
-      @result.should_receive(:to_i).with(no_args).and_return(0)
+      @result.stub(:to_i).with(no_args).and_return(0)
       @adapter.delete(@repository, @resource).should be false
     end
 
     it 'should return true if number of rows deleted is 1' do
-      @result.should_receive(:to_i).with(no_args).and_return(1)
+      @result.stub(:to_i).with(no_args).and_return(1)
       @adapter.delete(@repository, @resource).should be true
     end
   end
@@ -421,39 +421,37 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
 
     describe "#upgrade_model_storage" do
       it "should call #create_model_storage" do
-        @adapter.should_receive(:create_model_storage).with(nil, Cheese).and_return(true)
+        @adapter.stub(:create_model_storage).with(nil, Cheese).and_return(true)
         @adapter.upgrade_model_storage(nil, Cheese).should == Cheese.properties
       end
 
       it "should check if all properties of the model have columns if the table exists" do
-        @adapter.should_receive(:field_exists?).with("cheeses", "id").and_return(true)
-        @adapter.should_receive(:field_exists?).with("cheeses", "name").and_return(true)
-        @adapter.should_receive(:field_exists?).with("cheeses", "color").and_return(true)
-        @adapter.should_receive(:field_exists?).with("cheeses", "notes").and_return(true)
-        @adapter.should_receive(:storage_exists?).with("cheeses").and_return(true)
+        @adapter.stub(:field_exists?).with("cheeses", "id").and_return(true)
+        @adapter.stub(:field_exists?).with("cheeses", "name").and_return(true)
+        @adapter.stub(:field_exists?).with("cheeses", "color").and_return(true)
+        @adapter.stub(:field_exists?).with("cheeses", "notes").and_return(true)
+        @adapter.stub(:storage_exists?).with("cheeses").and_return(true)
         @adapter.upgrade_model_storage(nil, Cheese).should == []
       end
 
       it "should create and execute add column statements for columns that dont exist" do
-        @adapter.should_receive(:field_exists?).with("cheeses", "id").and_return(true)
-        @adapter.should_receive(:field_exists?).with("cheeses", "name").and_return(true)
-        @adapter.should_receive(:field_exists?).with("cheeses", "color").and_return(true)
-        @adapter.should_receive(:field_exists?).with("cheeses", "notes").and_return(false)
-        @adapter.should_receive(:storage_exists?).with("cheeses").and_return(true)
+        @adapter.stub(:field_exists?).with("cheeses", "id").and_return(true)
+        @adapter.stub(:field_exists?).with("cheeses", "name").and_return(true)
+        @adapter.stub(:field_exists?).with("cheeses", "color").and_return(true)
+        @adapter.stub(:field_exists?).with("cheeses", "notes").and_return(false)
+        @adapter.stub(:storage_exists?).with("cheeses").and_return(true)
         connection = double("connection")
-        connection.should_receive(:close)
-        @adapter.should_receive(:create_connection).and_return(connection)
+        connection.stub(:close)
+        @adapter.stub(:create_connection).and_return(connection)
         statement = double("statement")
         command = double("command")
         result = double("result")
-        result.should_receive(:to_i).and_return(1)
-        command.should_receive(:execute_non_query).and_return(result)
-        connection.should_receive(:create_command).with(statement).and_return(command)
-        @adapter.should_receive(:alter_table_add_column_statement).with("cheeses",
+        result.stub(:to_i).and_return(1)
+        command.stub(:execute_non_query).and_return(result)
+        connection.stub(:create_command).with(statement).and_return(command)
+        @adapter.stub(:alter_table_add_column_statement).with("cheeses",
                                                                              {
-                                                                               :nullable? => true,
                                                                                :name => "notes",
-                                                                               :serial? => false,
                                                                                :primitive => "VARCHAR",
                                                                                :size => 100
                                                                              }).and_return(statement)
@@ -471,32 +469,32 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
     end
 
     it 'should #create_command from the sql passed' do
-      @mock_db.should_receive(:create_command).with('SQL STRING').and_return(@mock_command)
+      @mock_db.stub(:create_command).with('SQL STRING').and_return(@mock_command)
       @adapter.execute('SQL STRING')
     end
 
     it 'should pass any additional args to #execute_non_query' do
-      @mock_command.should_receive(:execute_non_query).with(:args)
+      @mock_command.stub(:execute_non_query).with(:args)
       @adapter.execute('SQL STRING', :args)
     end
 
     it 'should return the result of #execute_non_query' do
-      @mock_command.should_receive(:execute_non_query).and_return(:result_set)
+      @mock_command.stub(:execute_non_query).and_return(:result_set)
 
       @adapter.execute('SQL STRING').should == :result_set
     end
 
     it 'should log any errors, then re-raise them' do
       pending
-      @mock_command.should_receive(:execute_non_query).and_raise("Oh Noes!")
-      #LazyMapper.logger.should_receive(:error)
+      @mock_command.stub(:execute_non_query).and_raise("Oh Noes!")
+      #LazyMapper.logger.stub(:error)
 
       lambda { @adapter.execute('SQL STRING') }.should raise_error("Oh Noes!")
     end
 
     it 'should always close the db connection' do
-      @mock_command.should_receive(:execute_non_query).and_raise("Oh Noes!")
-      @mock_db.should_receive(:close)
+      @mock_command.stub(:execute_non_query).and_raise("Oh Noes!")
+      @mock_db.stub(:close)
 
       lambda { @adapter.execute('SQL STRING') }.should raise_error("Oh Noes!")
     end
@@ -516,27 +514,27 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
     end
 
     it 'should #create_command from the sql passed' do
-      @mock_db.should_receive(:create_command).with('SQL STRING').and_return(@mock_command)
+      @mock_db.stub(:create_command).with('SQL STRING').and_return(@mock_command)
       @adapter.query('SQL STRING')
     end
 
     it 'should pass any additional args to #execute_reader' do
-      @mock_command.should_receive(:execute_reader).with(:args).and_return(@mock_reader)
+      @mock_command.stub(:execute_reader).with(:args).and_return(@mock_reader)
       @adapter.query('SQL STRING', :args)
     end
 
     describe 'returning multiple fields' do
 
       it 'should underscore the field names as members of the result struct' do
-        @mock_reader.should_receive(:fields).and_return(['id', 'UserName', 'AGE'])
+        @mock_reader.stub(:fields).and_return(['id', 'UserName', 'AGE'])
 
         result = @adapter.query('SQL STRING')
 
-        result.first.members.should == %w{id user_name age}
+        result.first.members.should == [:id, :user_name, :age]
       end
 
       it 'should convert each row into the struct' do
-        @mock_reader.should_receive(:values).and_return([1, 'rando', 27])
+        @mock_reader.stub(:values).and_return([1, 'rando', 27])
 
         @adapter.query('SQL STRING')
       end
@@ -559,8 +557,8 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
     describe 'returning a single field' do
 
       it 'should add the value to the results array' do
-        @mock_reader.should_receive(:fields).and_return(['username'])
-        @mock_reader.should_receive(:values).and_return(['rando'])
+        @mock_reader.stub(:fields).and_return(['username'])
+        @mock_reader.stub(:values).and_return(['rando'])
 
         results = @adapter.query('SQL STRING')
 
@@ -572,15 +570,15 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
 
     it 'should log any errors, then re-raise them' do
       pending
-      @mock_command.should_receive(:execute_non_query).and_raise("Oh Noes!")
-      #LazyMapper.logger.should_receive(:error)
+      @mock_command.stub(:execute_non_query).and_raise("Oh Noes!")
+      #LazyMapper.logger.stub(:error)
 
       lambda { @adapter.execute('SQL STRING') }.should raise_error("Oh Noes!")
     end
 
     it 'should always close the db connection' do
-      @mock_command.should_receive(:execute_non_query).and_raise("Oh Noes!")
-      @mock_db.should_receive(:close)
+      @mock_command.stub(:execute_non_query).and_raise("Oh Noes!")
+      @mock_db.stub(:close)
 
       lambda { @adapter.execute('SQL STRING') }.should raise_error("Oh Noes!")
     end

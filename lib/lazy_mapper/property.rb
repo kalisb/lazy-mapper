@@ -46,6 +46,10 @@ module LazyMapper
       Class,
     ]
 
+    DEFAULT_LENGTH    = 50
+    DEFAULT_SCALE     = 10
+    DEFAULT_PRECISION = 0
+
     attr_reader :primitive, :model, :name, :instance_variable_name,
       :type, :reader_visibility, :writer_visibility, :getter, :options,
       :default, :precision, :scale
@@ -199,19 +203,33 @@ module LazyMapper
 
     end
 
+
     # defines the getter for the property
     def create_getter
-      @model.define_singleton_method("#{@getter}") do
-        attr_accessor("#{@name.inspect}")
-        attribute_get("#{@name}")
+      @model.class_eval <<-EOS, __FILE__, __LINE__
+        #{reader_visibility}
+        def #{@getter}
+          #attr_accessor("#{@name.inspect}")
+          attribute_get(#{name.inspect})
+        end
+      EOS
+
+      if @primitive == TrueClass && !@model.instance_methods.include?(@name.to_s)
+        @model.class_eval <<-EOS, __FILE__, __LINE__
+          #{reader_visibility}
+          alias #{@name} #{@getter}
+        EOS
       end
     end
 
     # defines the setter for the property
     def create_setter
-      @model.define_singleton_method("#{name}=") do |value|
-        attribute_set("#{name.inspect}", value)
-      end
+      @model.class_eval <<-EOS, __FILE__, __LINE__
+        #{writer_visibility}
+        def #{name}=(value)
+          attribute_set(#{name.inspect}, value)
+        end
+      EOS
     end
   end # class Property
 end # module LazyMapper

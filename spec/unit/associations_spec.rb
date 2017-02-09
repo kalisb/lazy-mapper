@@ -145,6 +145,7 @@ describe "LazyMapper::Associations" do
             has n..n, :subsidiaries, :class_name => 'Manufacturer'
           end
         end.to raise_error(ArgumentError)
+<<<<<<< Updated upstream
       end
     end
   end
@@ -166,6 +167,8 @@ describe "LazyMapper::Associations" do
       class Manufacturer
         belongs_to :vehicle,
           :class_name => 'Car'
+=======
+>>>>>>> Stashed changes
       end
     end
   end

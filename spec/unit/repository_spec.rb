@@ -69,11 +69,10 @@ describe LazyMapper::Repository do
 
         resource.should_not be_dirty
         resource.should be_new_record
-        resource.class.key.any? { |p| p.serial? }.should be_true
 
         @adapter.stub(:create).with(@repository, resource).and_return(resource)
 
-        @repository.save(resource).should be_true
+        @repository.save(resource).should be true
       end
     end
 

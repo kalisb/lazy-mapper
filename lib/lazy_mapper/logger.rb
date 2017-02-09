@@ -15,17 +15,6 @@ require "time" # httpdate
 #   LazyMapper.logger.warn(message<String>)
 #   LazyMapper.logger.info(message<String>)
 #   LazyMapper.logger.debug(message<String>)
-#
-# Flush the buffer to
-#   LazyMapper.logger.flush
-#
-# Remove the current log object
-#   LazyMapper.logger.close
-#
-# ==== Private LazyMapper Logger API
-#
-# To initialize the logger you create a new object, proxies to set_log.
-#   LazyMapper::Logger.new(log{String, IO},level{Symbol, String})
 module LazyMapper
 
   class << self #:nodoc:
@@ -84,7 +73,7 @@ module LazyMapper
 
     def initialize_log(log)
       close if @log # be sure that we don't leave open files laying around.
-      log ||= "log/dm.log"
+      log ||= "log/lazy_mapper.log"
       if log.respond_to?(:write)
         @log = log
       else
@@ -162,7 +151,7 @@ module LazyMapper
     def push(string)
       message = Time.now.httpdate
       message << delimiter
-      message << string
+      message << string.to_s
       message << "\n" unless message[-1] == ?\n
       @buffer << message
       flush # Force a flush for now until we figure out where we want to use the buffering.
