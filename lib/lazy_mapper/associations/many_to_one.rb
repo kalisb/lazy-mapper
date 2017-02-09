@@ -13,6 +13,10 @@ module LazyMapper
 
         relationship = relationships(repository.name)[name] = Relationship.new(
           name,
+
+
+
+
           repository.name,
           self.name,
           parent_model_name,
@@ -43,9 +47,7 @@ module LazyMapper
         relationship
       end
 
-      class Proxy
-        instance_methods.each { |m| undef_method m unless %w[ __id__ __send__ class kind_of? should should_not ].include?(m) }
-
+      class Proxy < BasicObject
         def replace(parent_resource)
           @parent_resource = parent_resource
           @relationship.attach_parent(@child_resource, @parent_resource) if @parent_resource.nil? || !@parent_resource.new_record?
