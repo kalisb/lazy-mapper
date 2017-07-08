@@ -45,7 +45,7 @@ if HAS_POSTGRES
       end
 
       it "#storage_exists? should return false for tables that don't exist" do
-      #  expect(@adapter.storage_exists?("space turds")).to be false
+        expect(@adapter.storage_exists?("turds")).to be false
       end
 
       it "#field_exists? should return true for columns that exist" do
