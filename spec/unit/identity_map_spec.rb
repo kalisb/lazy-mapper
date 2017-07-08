@@ -20,9 +20,7 @@ describe "LazyMapper::IdentityMap" do
       property :name, String
     end
   end
-
-  it "should use a second level cache if created with on"
-
+  
   it "should return nil on #get when it does not find the requested instance" do
     map = LazyMapper::IdentityMap.new
     expect(map.get([23])).to be_nil

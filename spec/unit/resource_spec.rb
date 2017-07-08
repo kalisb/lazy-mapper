@@ -53,14 +53,7 @@ describe "LazyMapper::Resource" do
   it 'should provide persistance methods' do
    planet = Planet.new
    expect(planet).to respond_to(:new_record?)
-   expect(planet).tо respond_to(:save)
-   expect(planet).tо respond_to(:destroy)
+   expect(planet).to respond_to(:save)
+   expect(planet).to respond_to(:destroy)
  end
-
- it "should have attributes" do
-   attributes = { :name => 'Jupiter', :age => 1_000_000, :core => nil, :id => 42, :type => Planet }
-   jupiter = Planet.new(attributes)
-   expect(jupiter.attributes).to eq attributes
-end
-
 end
