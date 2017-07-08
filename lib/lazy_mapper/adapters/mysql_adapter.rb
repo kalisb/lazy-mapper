@@ -6,7 +6,7 @@ module LazyMapper
 
     # Options:
     # host, user, password, database (path), socket(uri query string), port
-    class MysqlAdapter < DataObjectsAdapter
+    class MysqlAdapter < DefaultAdapter
 
       # TypeMap for MySql databases.
       #

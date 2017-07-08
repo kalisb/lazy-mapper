@@ -1,88 +1,11 @@
 gem 'addressable', '>=1.0.4'
 require 'addressable/uri'
 module LazyMapper
-
-  module Resource
-
-    module ClassMethods
-      #
-      # Find instances by manually providing SQL
-      #
-      # @param sql<String>   an SQL query to execute
-      # @param <Array>    an Array containing a String (being the SQL query to
-      #   execute) and the parameters to the query.
-      #   example: ["SELECT name FROM users WHERE id = ?", id]
-      # @param query<LazyMapper::Query>  a prepared Query to execute.
-      # @param opts<Hash>     an options hash.
-      #     :repository<Symbol> the name of the repository to execute the query
-      #       in. Defaults to self.default_repository_name.
-      #     :reload<Boolean>   whether to reload any instances found that already
-      #      exist in the identity map. Defaults to false.
-      #     :properties<Array>  the Properties of the instance that the query
-      #       loads. Must contain LazyMapper::Properties.
-      #       Defaults to self.properties.
-      #
-      # @note
-      #   A String, Array or Query is required.
-      # @return <Collection> the instance matched by the query.
-      #
-      # @example
-      #   MyClass.find_by_sql(["SELECT id FROM my_classes WHERE county = ?",
-      #     selected_county], :properties => MyClass.property[:id],
-      #     :repository => :county_repo)
-      #
-      # -
-      # @api public
-      def find_by_sql(*args)
-        sql = nil
-        query = nil
-        params = []
-        properties = nil
-        do_reload = false
-        repository_name = default_repository_name
-        args.each do |arg|
-          if arg.is_a?(String)
-            sql = arg
-          elsif arg.is_a?(Array)
-            sql = arg.first
-            params = arg[1..-1]
-          elsif arg.is_a?(LazyMapper::Query)
-            query = arg
-          elsif arg.is_a?(Hash)
-            repository_name = arg.delete(:repository) if arg.include?(:repository)
-            properties = Array(arg.delete(:properties)) if arg.include?(:properties)
-            do_reload = arg.delete(:reload) if arg.include?(:reload)
-            raise "unknown options to #find_by_sql: #{arg.inspect}" unless arg.empty?
-          end
-        end
-
-        the_repository = repository(repository_name)
-        raise "#find_by_sql only available for Repositories served by a DataObjectsAdapter" unless the_repository.adapter.is_a?(LazyMapper::Adapters::DataObjectsAdapter)
-
-        if query
-          sql = the_repository.adapter.send(:query_read_statement, query)
-          params = query.fields
-        end
-
-        raise "#find_by_sql requires a query of some kind to work" unless sql
-
-        properties ||= self.properties
-
-        repository.adapter.send(:read_set_with_sql, repository, self, properties, sql, params, do_reload)
-      end
-    end
-
-  end
-
   module Adapters
 
     # You must inherit from the DoAdapter, and implement the
     # required methods to adapt a database library for use with the LazyMapper.
-    #
-    # NOTE: By inheriting from DataObjectsAdapter, you get a copy of all the
-    # standard sub-modules (Quoting, Coersion and Queries) in your own Adapter.
-    # You can extend and overwrite these copies without affecting the originals.
-    class DataObjectsAdapter < AbstractAdapter
+    class DefaultAdapter < AbstractAdapter
 
       # Default TypeMap for all data object based adapters.
       #
@@ -114,7 +37,7 @@ module LazyMapper
 
         statement = create_statement(resource.class, dirty_attributes, identity_field)
         bind_values = dirty_attributes.map { |p| resource.instance_variable_get(p.instance_variable_name) }
-
+        puts statement
         result = execute(statement, *bind_values)
 
         return false if result.to_i != 1
@@ -132,11 +55,6 @@ module LazyMapper
         properties_with_indexes = Hash[*properties.zip((0...properties.length).to_a).flatten]
 
         key = model.key(name)
-
-        # FIXME: do not use Collection for instantiating a single resource.
-        # TODO: Create a Resource class method that instantiates a resource
-        # and registers it in the IdentityMap so that Collection#load isn't
-        # needed for simple cases like this.
         set = Collection.new(repository, model, properties_with_indexes)
 
         statement = read_statement(model, properties, key)
@@ -156,8 +74,6 @@ module LazyMapper
       end
 
       def update(repository, resource)
-        # FIXME: if the properties are in different repositories
-        # won't this cause problems?
         dirty_attributes = resource.dirty_attributes
 
         return false if dirty_attributes.empty?
@@ -180,46 +96,27 @@ module LazyMapper
         execute(statement, *bind_values).to_i == 1
       end
 
-      # Methods dealing with finding stuff by some query parameters
-      def read_set(repository, query)
-        read_set_with_sql(repository,
-                          query.model,
-                          query.fields,
-                          query_read_statement(query),
-                          query.parameters,
-                          query.reload?)
-      end
-
       # Database-specific method
       def execute(statement, *args)
         with_connection do |connection|
-          command = connection.create_command(statement)
-          command.execute_non_query(*args)
+          puts "IN: #{statement}"
+          connection.execute(statement)
+          #command.execute_non_query(*args)
         end
       end
 
       def query(statement, *args)
-        with_reader(statement, *args) do |reader|
+        with_connection do |connection|
           results = []
-
-          if (fields = reader.fields).size > 1
-            fields = fields.map { |field| LazyMapper::Inflection.underscore(field).to_sym }
-            struct = Struct.new(*fields)
-
-            while(reader.next!) do
-              results << struct.new(*reader.values)
-            end
-          else
-            while(reader.next!) do
-              results << reader.values.at(0)
-            end
-          end
-
+          connection.prepare(statement)
+          rs = connection.execute(args)
+          rs.each { |result|
+            results << result
+          }
           results
         end
       end
 
-      # TODO: move to dm-more/dm-migrations
       def upgrade_model_storage(repository, model)
         table_name = model.storage_name(name)
 
@@ -240,23 +137,21 @@ module LazyMapper
         properties
       end
 
-      # TODO: move to dm-more/dm-migrations
       def create_model_storage(repository, model)
         return false if storage_exists?(model.storage_name(name))
         fail = false
-        fail = true unless execute(create_table_statement(model)).to_i == 1
+        puts create_table_statement(model)
+        fail = true unless execute(create_table_statement(model))
         (create_index_statements(model) + create_unique_index_statements(model)).each do |sql|
           fail = true unless execute(sql).to_i == 1
         end
         !fail
       end
 
-      # TODO: move to dm-more/dm-migrations
       def destroy_model_storage(repository, model)
-        execute(drop_table_statement(model)).to_i == 1
+        execute(drop_table_statement(model))
       end
 
-      # TODO: move to dm-more/dm-transactions
       def transaction_primitive
         LazyMapper::Transaction.create_for_uri(@uri)
       end
@@ -322,18 +217,6 @@ module LazyMapper
           raise e
         ensure
           close_connection(connection) if connection
-        end
-      end
-
-      def with_reader(statement, *params, &block)
-        with_connection do |connection|
-          reader = nil
-          begin
-            reader = connection.create_command(statement).execute_reader(*params)
-            return yield(reader)
-          ensure
-            reader.close if reader
-          end
         end
       end
 
@@ -640,7 +523,7 @@ module LazyMapper
 
         # TODO: move to dm-more/dm-migrations
         def drop_table_statement(model)
-          "DROP TABLE IF EXISTS #{quote_table_name(model.storage_name(name))}"
+          "DROP TABLE IF EXISTS #{model.storage_name(name)}"
         end
 
         # TODO: move to dm-more/dm-migrations

@@ -25,7 +25,7 @@ module LazyMapper
           end
         EOS
 
-        driver_module.logger = LazyMapper::DeadLogger
+        driver_module.logger = LazyMapper::Logger
       end
     end
 

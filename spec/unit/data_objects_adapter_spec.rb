@@ -1,8 +1,6 @@
 require 'monitor'
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-# TODO: make a shared adapter spec for all the DAO objects to adhere to
-
 describe LazyMapper::Adapters::DataObjectsAdapter do
   before :all do
     class Cheese

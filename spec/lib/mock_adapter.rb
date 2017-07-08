@@ -1,6 +1,6 @@
 module LazyMapper
   module Adapters
-    class MockAdapter < LazyMapper::Adapters::DataObjectsAdapter
+    class MockAdapter < LazyMapper::Adapters::DefaultAdapter
 
       def create(repository, instance)
         instance

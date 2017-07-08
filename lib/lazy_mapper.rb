@@ -7,7 +7,6 @@ require 'addressable/uri'
 dir = Pathname(__FILE__).dirname.expand_path / 'lazy_mapper'
 
 require dir / 'associations'
-require dir / 'auto_migrations'
 require dir / 'hook'
 require dir / 'identity_map'
 require dir / 'logger'

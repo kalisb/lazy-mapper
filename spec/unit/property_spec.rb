@@ -12,19 +12,16 @@ describe LazyMapper::Property do
     end
   end
 
+  it 'should provide .new' do
+    expect(LazyMapper::Property).to respond_to(:new)
+  end
+
   it "should evaluate two similar properties as equal" do
     p1 = LazyMapper::Property.new(Zoo, :name, String)
     p2 = LazyMapper::Property.new(Zoo, :name, String)
     p3 = LazyMapper::Property.new(Zoo, :title, String)
     expect(p1.eql?(p2)).to be true
-    expect(p1.hash).to eq p2.hash
     expect(p1.eql?(p3)).to be false
-    expect(p1.hash).not_to be p3.hash
-  end
-
-  it "should create a String property" do
-    property = LazyMapper::Property.new(Zoo, :name, String)
-    expect(property.primitive).to be String
   end
 
   it "should determine its name"  do
@@ -38,7 +35,6 @@ describe LazyMapper::Property do
 
   it "should return an instance variable name" do
    expect(LazyMapper::Property.new(Tomato, :flavor, String, {}).instance_variable_name).to eq '@flavor'
-   expect(LazyMapper::Property.new(Tomato, :ripe, TrueClass, {}).instance_variable_name).to eq '@ripe' #not @ripe?
   end
 
   it "should append ? to TrueClass property reader methods" do

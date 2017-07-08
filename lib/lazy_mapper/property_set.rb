@@ -8,10 +8,6 @@ module LazyMapper
 
     alias has_property? []
 
-    def slice(*names)
-      @property_for.values_at(*names)
-    end
-
     def add(*properties)
       @entries.push(*properties)
       properties.each { |property| property.hash }
@@ -39,18 +35,6 @@ module LazyMapper
 
     def key
       select { |property| property.key? }
-    end
-
-    def indexes
-      index_hash = {}
-      each { |property| parse_index(property.index, property.field.to_s, index_hash) }
-      index_hash
-    end
-
-    def unique_indexes
-      index_hash = {}
-      each { |property| parse_index(property.unique_index, property.field.to_s, index_hash) }
-      index_hash
     end
 
     def get(resource)
@@ -104,16 +88,10 @@ module LazyMapper
       Hash[ *zip(bind_values).flatten ]
     end
 
-    def inspect
-      '#<PropertySet:{' + map { |property| property.inspect }.join(',') + '}>'
-    end
-
     def dup(target = nil)
       return super() unless target
 
       properties = map do |property|
-        # TODO: remove this hack once most in-the-wild code has switched
-        # over to using Integer instead of Fixnum for properties
         type = property.type
         type = Integer if Fixnum == type
         Property.new(target || property.model, property.name, type, property.options.dup)

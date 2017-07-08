@@ -7,8 +7,7 @@ module LazyMapper
   # = Properties
   # Properties for a model are not derived from a database structure, but
   # instead explicitly declared inside your model class definitions. These
-  # properties then map (or, if using automigrate, generate) fields in your
-  # repository/database.
+  # properties then map fields in your # repository/database.
   #
   # == Declaring Properties
   # Inside your class, you call the property method for each property you want
@@ -22,62 +21,21 @@ module LazyMapper
   # instantiate -every- property -every- time an object is loaded).
   #
   # == Keys
-  # Properties can be declared as primary or natural keys on a table.
-  # You should a property as the primary key of the table:
+  # Properties can be declared as primary keys on a table.
   #
   class Property
 
-    PROPERTY_OPTIONS = [ :key, :unique,]
+    PROPERTY_OPTIONS = [ :key, :lazy ]
 
-    # FIXME: can we pull the keys from
-    # LazyMapper::Adapters::DataObjectsAdapter::TYPES
-    # for this?
-    TYPES = [
-      TrueClass,
-      String,
-      Float,
-      Fixnum,
-      Integer,
-      BigDecimal,
-      DateTime,
-      Date,
-      Time,
-      Object,
-      Class,
-    ]
-
-    DEFAULT_LENGTH    = 50
-    DEFAULT_SCALE     = 10
-    DEFAULT_PRECISION = 0
-
-    attr_reader :primitive, :model, :name, :instance_variable_name,
-      :type, :reader_visibility, :writer_visibility, :getter, :options,
-      :default, :precision, :scale
+    attr_reader :model, :name, :type, :options, :length, :instance_variable_name
 
     # Supplies the field in the data-store which the property corresponds to
-    #
-    # @return <String> name of field in data-store
-    # -
-    # @api semi-public
     def field(*args)
       @options.fetch(:field, repository(*args).adapter.field_naming_convention.call(name))
     end
 
-    def unique
-      @unique ||= @options.fetch(:unique, @serial || @key || false)
-    end
-
     def repository(*args)
       @model.repository(*args)
-    end
-
-    def hash
-      if @custom && !@bound
-        @type.bind(self)
-        @bound = true
-      end
-
-      return @model.hash + @name.hash
     end
 
     def eql?(o)
@@ -93,61 +51,46 @@ module LazyMapper
     end
     alias size length
 
-    def index
-      @index
-    end
-
-    def unique_index
-      @unique_index
-    end
 
     # Returns whether or not the property is to be lazy-loaded
-    #
-    # @return <TrueClass, FalseClass> whether or not the property is to be
-    #   lazy-loaded
-    # -
-    # @api public
     def lazy?
       @lazy
     end
 
 
     # Returns whether or not the property is a key or a part of a key
-    #
-    # @return <TrueClass, FalseClass> whether the property is a key or a part of
-    #   a key
-    #-
-    # @api public
     def key?
       @key
     end
 
     # Provides a standardized getter method for the property
-    #
-    # @raise <ArgumentError> "+resource+ should be a LazyMapper::Resource, but was ...."
-    #-
-    # @api private
     def get(resource)
+      lazy_load(resource)
       raise ArgumentError, "+resource+ should be a LazyMapper::Resource, but was #{resource.class}" unless Resource === resource
       resource.attribute_get(@name)
     end
 
     # Provides a standardized setter method for the property
-    #
-    # @raise <ArgumentError> "+resource+ should be a LazyMapper::Resource, but was ...."
-    #-
-    # @api private
     def set(resource, value)
+      lazy_load(resource)
       raise ArgumentError, "+resource+ should be a LazyMapper::Resource, but was #{resource.class}" unless Resource === resource
       resource.attribute_set(@name, value)
     end
 
+    # Loads lazy columns when get or set is called.
+    def lazy_load(resource)
+      # TODO: refactor this section
+      contexts = if lazy?
+        name
+      else
+        model.properties(resource.repository.name).reject do |property|
+          property.lazy? || resource.attribute_loaded?(property.name)
+        end
+      end
+      resource.send(:lazy_load, contexts)
+    end
+
     # typecasts values into a primitive
-    #
-    # @return <TrueClass, String, Float, Integer, BigDecimal, DateTime, Date, Time
-    #   Class> the primitive data-type, defaults to TrueClass
-    #-
-    # @private
     def typecast(value)
       return value if type === value || (value.nil? && type != TrueClass)
 
@@ -163,20 +106,11 @@ module LazyMapper
       end
     end
 
-    def default_for(resource)
-      @default.respond_to?(:call) ? @default.call(resource, self) : @default
-    end
-
-    def inspect
-      "#<Property:#{@model}:#{@name}>"
-    end
-
     private
 
     def initialize(model, name, type, options = {})
       raise ArgumentError, "+model+ is a #{model.class}, but is not a type of Resource"                 unless Resource > model
       raise ArgumentError, "+name+ should be a Symbol, but was #{name.class}"                           unless Symbol === name
-      raise ArgumentError, "+type+ was #{type.inspect}, which is not a supported type: #{TYPES * ', '}" unless TYPES.include?(type) || (LazyMapper::Type > type && TYPES.include?(type.primitive))
 
       if (unknown_options = options.keys - PROPERTY_OPTIONS).any?
         raise ArgumentError, "+options+ contained unknown keys: #{unknown_options * ', '}"
@@ -188,12 +122,12 @@ module LazyMapper
       @options                = options
       @instance_variable_name = "@#{@name}"
 
-      # TODO: This default should move to a LazyMapper::Types::Text
       # Custom-Type and out of Property.
       @primitive = @options.fetch(:primitive, @type.respond_to?(:primitive) ? @type.primitive : @type)
 
       @getter   = TrueClass == @primitive ? "#{@name}?".to_sym : @name
       @key      = @options.fetch(:key,      @serial || false)
+      @lazy = @options.fetch(:lazy, @type.respond_to?(:lazy) ? @type.lazy : false) && !@key
 
       create_getter
       create_setter
@@ -207,7 +141,6 @@ module LazyMapper
     # defines the getter for the property
     def create_getter
       @model.class_eval <<-EOS, __FILE__, __LINE__
-        #{reader_visibility}
         def #{@getter}
           #attr_accessor("#{@name.inspect}")
           attribute_get(#{name.inspect})
@@ -216,7 +149,6 @@ module LazyMapper
 
       if @primitive == TrueClass && !@model.instance_methods.include?(@name.to_s)
         @model.class_eval <<-EOS, __FILE__, __LINE__
-          #{reader_visibility}
           alias #{@name} #{@getter}
         EOS
       end
@@ -225,7 +157,6 @@ module LazyMapper
     # defines the setter for the property
     def create_setter
       @model.class_eval <<-EOS, __FILE__, __LINE__
-        #{writer_visibility}
         def #{name}=(value)
           attribute_set(#{name.inspect}, value)
         end
