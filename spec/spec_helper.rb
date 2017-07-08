@@ -28,6 +28,6 @@ end
 ENV['ADAPTER'] ||= 'sqlite3'
 
 HAS_SQLITE3  = setup_adapter(:sqlite3,  'sqlite3::memory:')
-HAS_MYSQL    = setup_adapter(:mysql,    'mysql://localhost/test')
+HAS_POSTGRES = setup_adapter(:postgres, 'postgres://postgres@localhost/dm_core_test')
 
 LazyMapper::Logger.new(nil, :debug)
