@@ -63,6 +63,10 @@ module LazyMapper
       @key
     end
 
+    def default_for(resource)
+      @default.respond_to?(:call) ? @default.call(resource, self) : @default
+    end
+
     # Provides a standardized getter method for the property
     def get(resource)
       lazy_load(resource)

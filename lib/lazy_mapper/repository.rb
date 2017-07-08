@@ -33,25 +33,12 @@ module LazyMapper
 
     ##
     # retrieve a specific instance by key
-    #
-    # @param <Class> model the specific resource to retrieve from
-    # @param <Key> key The keys to look for
-    # @return <Class> the instance of the Resource retrieved
-    # @return <NilClass> could not find the instance requested
-    #
-    #- TODO: this should use current_scope too
     def get(model, key)
       identity_maps[model][key] || adapter.read(self, model, key)
     end
 
     ##
     # retrieve a singular instance by query
-    #
-    # @param <Class> model the specific resource to retrieve from
-    # @param <Hash, Query> options composition of the query to perform
-    # @return <Class> the first retrieved instance which matches the query
-    # @return <NilClass> no object could be found which matches that query
-    # @see LazyMapper::Query
     def first(model, options)
       query = if current_scope = model.send(:current_scope)
         current_scope.merge(options.merge(:limit => 1))
@@ -64,11 +51,6 @@ module LazyMapper
 
     ##
     # retrieve a collection of results of a query
-    #
-    # @param <Class> model the specific resource to retrieve from
-    # @param <Hash, Query> options composition of the query to perform
-    # @return <Collection> result set of the query
-    # @see LazyMapper::Query
     def all(model, options)
       query = if current_scope = model.send(:current_scope)
         current_scope.merge(options)
@@ -80,10 +62,6 @@ module LazyMapper
 
     ##
     # save the instance into the data-store, updating if it already exists
-    # If the instance has dirty items in it's associations, they also get saved
-    #
-    # @param <Class> resource the resource to return to the data-store
-    # @return <True, False> results of the save
     def save(resource)
       resource.child_associations.each { |a| a.save }
 
@@ -143,24 +121,8 @@ module LazyMapper
       end
     end
 
-    def migrate!
-      Migrator.migrate(name)
-    end
-
-    def auto_migrate!
-      AutoMigrator.auto_migrate(name)
-    end
-
-    def auto_upgrade!
-      AutoMigrator.auto_upgrade(name)
-    end
-
     ##
     # Produce a new Transaction for this Repository
-    #
-    #
-    # @return <LazyMapper::Adapters::Transaction> a new Transaction (in state
-    #   :none) that can be used to execute code #with_transaction
     def transaction
       LazyMapper::Transaction.new(self)
     end

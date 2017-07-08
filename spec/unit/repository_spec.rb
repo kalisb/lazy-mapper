@@ -96,12 +96,4 @@ describe LazyMapper::Repository do
   it 'should return :default for default_name' do
     expect(LazyMapper::Repository.default_name).to eq :default
   end
-
-  describe "#auto_migrate!" do
-    it "should call LazyMapper::AutoMigrator.auto_migrate with itself as the repository argument" do
-      allow(LazyMapper::AutoMigrator).to receive(:auto_migrate).with(@repository.name)
-
-      @repository.auto_migrate!
-    end
-  end
 end
