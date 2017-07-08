@@ -13,10 +13,10 @@ module LazyMapper
       def self.type_map
         @type_map ||= TypeMap.new(super) do |tm|
           tm.map(Integer).to('INT')
-          tm.map(String).to('VARCHAR').with(:size => Property::DEFAULT_LENGTH)
-          tm.map(Class).to('VARCHAR').with(:size => Property::DEFAULT_LENGTH)
-          tm.map(BigDecimal).to('DECIMAL').with(:scale => Property::DEFAULT_SCALE, :precision => Property::DEFAULT_PRECISION)
-          tm.map(Float).to('FLOAT').with(:scale => Property::DEFAULT_SCALE, :precision => Property::DEFAULT_PRECISION)
+          tm.map(String).to('VARCHAR').with(:size => 25)
+          tm.map(Class).to('VARCHAR').with(:size => 25)
+#          tm.map(BigDecimal).to('DECIMAL').with(:scale => Property::DEFAULT_SCALE, :precision => Property::DEFAULT_PRECISION)
+#          tm.map(Float).to('FLOAT').with(:scale => Property::DEFAULT_SCALE, :precision => Property::DEFAULT_PRECISION)
           tm.map(DateTime).to('DATETIME')
           tm.map(Date).to('DATE')
           tm.map(Time).to('TIMESTAMP')
@@ -37,7 +37,6 @@ module LazyMapper
 
         statement = create_statement(resource.class, dirty_attributes, identity_field)
         bind_values = dirty_attributes.map { |p| resource.instance_variable_get(p.instance_variable_name) }
-        puts statement
         result = execute(statement, *bind_values)
 
         return false if result.to_i != 1
@@ -99,20 +98,28 @@ module LazyMapper
       # Database-specific method
       def execute(statement, *args)
         with_connection do |connection|
-          puts "IN: #{statement}"
           connection.execute(statement)
           #command.execute_non_query(*args)
         end
       end
 
       def query(statement, *args)
-        with_connection do |connection|
+        with_reader(statement, args) do |reader|
           results = []
-          connection.prepare(statement)
-          rs = connection.execute(args)
-          rs.each { |result|
-            results << result
-          }
+
+          if (fields = reader.fields).size > 1
+            fields = fields.map { |field| field.downcase.to_sym }
+            struct = Struct.new(*fields)
+
+            while(reader.next!) do
+              results << struct.new(*reader.values)
+            end
+          else
+            while(reader.next!) do
+              results << reader.values.at(0)
+            end
+          end
+
           results
         end
       end
@@ -131,7 +138,7 @@ module LazyMapper
           next if field_exists?(table_name, schema_hash[:name])
           statement = alter_table_add_column_statement(table_name, schema_hash)
           result = execute(statement)
-          properties << property if result.to_i == 1
+          properties << property #if result.to_i == 1
         end
 
         properties
@@ -140,11 +147,10 @@ module LazyMapper
       def create_model_storage(repository, model)
         return false if storage_exists?(model.storage_name(name))
         fail = false
-        puts create_table_statement(model)
         fail = true unless execute(create_table_statement(model))
-        (create_index_statements(model) + create_unique_index_statements(model)).each do |sql|
-          fail = true unless execute(sql).to_i == 1
-        end
+        #(create_index_statements(model) + create_unique_index_statements(model)).each do |sql|
+        #  fail = true unless execute(sql).to_i == 1
+        #end
         !fail
       end
 
@@ -174,7 +180,6 @@ module LazyMapper
         database = uri_or_options.delete(:database)
         query = uri_or_options.to_a.map { |pair| pair.join('=') }.join('&')
         query = nil if query == ""
-        puts query
         return Addressable::URI.new(
           :scheme => adapter, :user => user, :password => password, :host => host, :port => port, :path => database,  :query => query
         )
@@ -191,7 +196,6 @@ module LazyMapper
         end
       end
 
-      # TODO: clean up once transaction related methods move to dm-more/dm-transactions
       def close_connection(connection)
         connection.close unless within_transaction? && current_transaction.primitive_for(self).connection == connection
       end
@@ -204,6 +208,18 @@ module LazyMapper
         # Default the driver-specifc logger to LazyMapper's logger
         if driver_module = DataObjects.const_get(@uri.scheme.capitalize) rescue nil
           driver_module.logger = LazyMapper.logger if driver_module.respond_to?(:logger=)
+        end
+      end
+
+      def with_reader(statement, bind_values = [], &block)
+        with_connection do |connection|
+          reader = nil
+          begin
+            reader = connection.create_command(statement).execute_reader(*bind_values)
+            return yield(reader)
+          ensure
+            reader.close if reader
+          end
         end
       end
 
@@ -550,9 +566,9 @@ module LazyMapper
           # TODO: figure out a way to specify the size not be included, even if
           # a default is defined in the typemap
           #  - use this to make it so all TEXT primitive fields do not have size
-          if property.primitive == String && schema[:primitive] != 'TEXT'
+          if property.type == String && schema[:primitive] != 'TEXT'
             schema[:size] = property.length
-          elsif property.primitive == BigDecimal || property.primitive == Float
+          elsif property.type == BigDecimal || property.type == Float
             schema[:scale]     = property.scale
             schema[:precision] = property.precision
           end
@@ -564,15 +580,6 @@ module LazyMapper
         def property_schema_statement(schema)
           statement = quote_column_name(schema[:name])
           statement << " #{schema[:primitive]}"
-
-          if schema[:scale] && schema[:precision]
-            statement << "(#{schema[:scale]},#{schema[:precision]})"
-          elsif schema[:size]
-            statement << "(#{schema[:size]})"
-          end
-
-          statement << ' NOT NULL' unless schema[:nullable?]
-          statement << " DEFAULT #{quote_column_value(schema[:default])}" if schema.has_key?(:default)
           statement
         end
 

@@ -1,7 +1,7 @@
 require 'monitor'
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-describe LazyMapper::Adapters::DataObjectsAdapter do
+describe LazyMapper::Adapters::DefaultAdapter do
   before :all do
     class Cheese
       include LazyMapper::Resource
@@ -14,89 +14,7 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
 
   before do
     @uri     = Addressable::URI.parse('mock://localhost')
-    @adapter = LazyMapper::Adapters::DataObjectsAdapter.new(:default, @uri)
-  end
-
-  describe "#find_by_sql" do
-
-    before do
-      class Plupp
-        include LazyMapper::Resource
-        property :id, Integer, :key => true
-        property :name, String
-      end
-    end
-
-    it "should be added to LazyMapper::Resource::ClassMethods" do
-      expect(LazyMapper::Resource::ClassMethods.instance_methods.include?("find_by_sql")).to eq true
-      expect(Plupp).to respond_to(:find_by_sql)
-    end
-
-    describe "when called" do
-
-      before do
-        @reader = double("reader")
-        allow(@reader).to receive(:next!).and_return(false)
-        allow(@reader).to receive(:close)
-        @connection = double("connection")
-        allow(@connection).to receive(:close)
-        @command = double("command")
-        @adapter = Plupp.repository.adapter
-        @repository = Plupp.repository
-        allow(@repository).to receive(:adapter).and_return(@adapter)
-        allow(@adapter).to receive(:create_connection).and_return(@connection)
-        allow(@adapter).to receive(:is_a?).with(LazyMapper::Adapters::DataObjectsAdapter).and_return(true)
-      end
-
-      it "should accept a single String argument with or without options hash" do
-        allow(@connection).to receive(:create_command).twice.with("SELECT * FROM plupps").and_return(@command)
-        allow(@command).to receive(:set_types).twice.with([Integer, String])
-        allow(@command).to receive(:execute_reader).twice.and_return(@reader)
-        allow(Plupp).to receive(:repository).and_return(@repository)
-        allow(Plupp).to receive(:repository).with(:plupp_repo).and_return(@repository)
-        Plupp.find_by_sql("SELECT * FROM plupps").to_a
-        Plupp.find_by_sql("SELECT * FROM plupps", :repository => :plupp_repo).to_a
-      end
-
-      it "should accept an Array argument with or without options hash" do
-        allow(@connection).to receive(:create_command).twice.with("SELECT * FROM plupps WHERE plur = ?").and_return(@command)
-        allow(@command).to receive(:set_types).twice.with([Integer, String])
-        allow(@command).to receive(:execute_reader).twice.with("my pretty plur").and_return(@reader)
-        allow(Plupp).to receive(:repository).and_return(@repository)
-        allow(Plupp).to receive(:repository).with(:plupp_repo).and_return(@repository)
-        Plupp.find_by_sql(["SELECT * FROM plupps WHERE plur = ?", "my pretty plur"]).to_a
-        Plupp.find_by_sql(["SELECT * FROM plupps WHERE plur = ?", "my pretty plur"], :repository => :plupp_repo).to_a
-      end
-
-      it "should accept a Query argument with or without options hash" do
-        allow(@connection).to receive(:create_command).twice.with("SELECT \"name\" FROM \"plupps\" WHERE \"name\" = ?").and_return(@command)
-        allow(@command).to receive(:set_types).twice.with([Integer, String])
-        allow(@command).to receive(:execute_reader).twice.with(Plupp.properties[:name]).and_return(@reader)
-        allow(Plupp).to receive(:repository).and_return(@repository)
-        allow(Plupp).to receive(:repository).with(:plupp_repo).and_return(@repository)
-        Plupp.find_by_sql(LazyMapper::Query.new(@repository, Plupp, "name" => "my pretty plur", :fields => ["name"])).to_a
-        Plupp.find_by_sql(LazyMapper::Query.new(@repository, Plupp, "name" => "my pretty plur", :fields => ["name"]), :repository => :plupp_repo).to_a
-      end
-
-      it "requires a Repository that is a DataObjectsRepository to work" do
-        non_do_adapter = double("non do adapter")
-        non_do_repo = double("non do repo")
-        allow(non_do_repo).to receive(:adapter).and_return(non_do_adapter)
-        allow(Plupp).to receive(:repository).with(:plupp_repo).and_return(non_do_repo)
-        expect Proc.new do
-          Plupp.find_by_sql(:repository => :plupp_repo)
-        end.to raise_error(Exception, /DataObjectsAdapter/)
-      end
-
-      it "requires some kind of query to work at all" do
-        expect(Plupp).to receive(:repository).with(:plupp_repo).and_return(@repository)
-        expect Proc.new do
-          Plupp.find_by_sql(:repository => :plupp_repo)
-        end.to raise_error(Exception, /requires a query/)
-      end
-
-    end
-
+    @adapter = LazyMapper::Adapters::DefaultAdapter.new(:default, @uri)
   end
 
   describe '#uri options' do
@@ -111,7 +29,7 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
         :socket => 'nosock'
       }
 
-      adapter = LazyMapper::Adapters::DataObjectsAdapter.new(:spec, options)
+      adapter = LazyMapper::Adapters::DefaultAdapter.new(:spec, options)
       expect(adapter.uri).to eq Addressable::URI.parse("mysql://me:mypass@davidleal.com:5000/you_can_call_me_al?socket=nosock")
     end
 
@@ -121,13 +39,13 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
         :database => 'you_can_call_me_al'
       }
 
-      adapter = LazyMapper::Adapters::DataObjectsAdapter.new(:spec, options)
+      adapter = LazyMapper::Adapters::DefaultAdapter.new(:spec, options)
       expect(adapter.uri).to eq Addressable::URI.parse("mysql:///you_can_call_me_al")
     end
 
     it 'should accept the uri when no overrides exist' do
       uri = Addressable::URI.parse("protocol:///")
-      expect(LazyMapper::Adapters::DataObjectsAdapter.new(:spec, uri).uri).to eq uri
+      expect(LazyMapper::Adapters::DefaultAdapter.new(:spec, uri).uri).to eq uri
     end
   end
 
@@ -313,7 +231,6 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
       allow(@resource).to receive(:instance_variable_get).with('@property').twice.and_return('bind value')
       allow(@model).to receive(:key).with(:default).and_return([ @property ])
       allow(@adapter).to receive(:execute).with(anything, 'bind value', 'bind value').and_return(@result)
-      allow(@adapter).to receive(@repository, @resource)
     end
 
     it 'should generate an SQL statement' do
@@ -523,7 +440,7 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
       it 'should underscore the field names as members of the result struct' do
         allow(@mock_reader).to receive(:fields).and_return(['id', 'UserName', 'AGE'])
         result = @adapter.query('SQL STRING')
-        expect(result.first.members).to eq [:id, :user_name, :age]
+        expect(result.first.members).to eq [:id, :username, :age]
       end
 
       it 'should convert each row into the struct' do
@@ -541,7 +458,7 @@ describe LazyMapper::Adapters::DataObjectsAdapter do
         expect(row).to be_kind_of(Struct)
 
         expect(row.id).to eq 1
-        expect(row.user_name).to eq 'rando'
+        expect(row.username).to eq 'rando'
         expect(row.age).to eq 27
       end
 

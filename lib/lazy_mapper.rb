@@ -7,6 +7,7 @@ require 'addressable/uri'
 dir = Pathname(__FILE__).dirname.expand_path / 'lazy_mapper'
 
 require dir / 'associations'
+require dir / 'auto_migrations'
 require dir / 'hook'
 require dir / 'identity_map'
 require dir / 'logger'
@@ -14,7 +15,6 @@ require dir / 'type_map'
 require dir / 'naming_conventions'
 require dir / 'property_set'
 require dir / 'query'
-require dir / 'transaction'
 require dir / 'repository'
 require dir / 'resource'
 require dir / 'scope'
@@ -44,20 +44,6 @@ module LazyMapper
 
   ##
   # Setups up a connection to a data-store
-  #
-  # @param name<Symbol> a name for the context, defaults to :default
-  # @param uri_or_options<Hash{Symbol => String}, Addressable::URI, String>
-  #   connection information
-  #
-  # @return <Repository> the resulting setup repository
-  #
-  # @raise <ArgumentError> "+name+ must be a Symbol, but was..." indicates that
-  #   an invalid argument was passed for name<Symbol>
-  # @raise <ArgumentError> "+uri_or_options+ must be a Hash, URI or String, but was..."
-  #   indicates that connection information could not be gleaned from the given
-  #   uri_or_options<Hash, Addressable::URI, String>
-  # -
-  # @api public
   def self.setup(name, uri_or_options)
     raise ArgumentError, "+name+ must be a Symbol, but was #{name.class}", caller unless Symbol === name
 
@@ -125,22 +111,6 @@ module LazyMapper
 
   # A logger should always be present.
   Logger.new(nil, :fatal)
-
-  ##
-  # destructively migrates the repository upwards to match model definitions
-  #
-  # @param <Symbol> name repository to act on, :default is the default
-  def self.migrate!(name = Repository.default_name)
-    repository(name).migrate!
-  end
-
-  ##
-  # drops and recreates the repository upwards to match model definitions
-  #
-  # @param <Symbol> name repository to act on, :default is the default
-  def self.auto_migrate!(name = Repository.default_name)
-    repository(name).auto_migrate!
-  end
 
   def self.prepare(*args, &blk)
     yield repository(*args)

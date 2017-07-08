@@ -19,7 +19,6 @@ module LazyMapper
       def storage_exists?(table_name)
         size = 0
         execute('PRAGMA table_info(\'' + table_name + '\')').each { |row|
-          puts row
           size += 1
         }
         size > 0
@@ -27,8 +26,16 @@ module LazyMapper
 
       def field_exists?(storage_name, column_name)
         query_table(storage_name).any? do |row|
-          row.name == column_name
+          row[1] == column_name
         end
+      end
+
+      def query_table(storage_name)
+        rows = []
+        execute('PRAGMA table_info(\'' + storage_name + "')").each { |row|
+          rows << row
+        }
+        rows
       end
 
       protected
@@ -50,7 +57,7 @@ module LazyMapper
           array.each { |prop|
             statement << "#{prop[:name]} #{prop[:primitive]}"
           }
-          #statement << "#{model.properties.collect {|p| property_schema_hash(p, model) } * ', '}"
+        #  statement << "#{model.properties.collect {|p| property_schema_hash(p, model) } * ', '}"
 
           if (key = model.properties.key).any?
             statement << " PRIMARY KEY(#{ key.collect { |p| p.field(name) } * ', '})"
@@ -67,7 +74,14 @@ module LazyMapper
   module Sqlite3
     class Connection
       def self.acquire(uri)
-        @connection = SQLite3::Database.new( uri.path )
+        @connection = SQLite3::Database.new uri
+      end
+
+      def self.close
+        @connection.close
+      end
+
+      def self.create_command(statement)
       end
     end
   end

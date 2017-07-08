@@ -29,6 +29,9 @@ module LazyMapper
       end
     end
 
+    def self.prepare(statement)
+    end
+
     def self.new(uri)
       uri = uri.is_a?(String) ? Addressable::URI::parse(uri) : uri
       LazyMapper.const_get(uri.scheme.capitalize)::Connection.acquire(uri)

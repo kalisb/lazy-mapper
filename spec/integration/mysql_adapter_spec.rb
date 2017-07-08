@@ -12,21 +12,6 @@ if HAS_MYSQL
 
         property :id, Integer, :key => true
         property :name, String
-
-        auto_migrate!(:mysql)
-      end
-    end
-
-    describe "auto migrating" do
-      it "#upgrade_model should work" do
-        @adapter.destroy_model_storage(nil, Sputnik)
-        @adapter.storage_exists?("sputniks").should == false
-        Sputnik.auto_migrate!(:mysql)
-        @adapter.storage_exists?("sputniks").should == true
-        @adapter.field_exists?("sputniks", "new_prop").should == false
-        Sputnik.property :new_prop, Integer
-        Sputnik.auto_upgrade!(:mysql)
-        @adapter.field_exists?("sputniks", "new_prop").should == true
       end
     end
 
@@ -45,31 +30,6 @@ if HAS_MYSQL
 
       it "#storage_exists? should return false for tables that don't exist" do
         @adapter.field_exists?("sputniks", "plur").should == false
-      end
-    end
-
-    describe "handling transactions" do
-      before do
-        @transaction = LazyMapper::Transaction.new(@adapter)
-      end
-
-      it "should rollback changes when #rollback_transaction is called" do
-        repository(:mysql) do
-          @transaction.commit do |trans|
-            Sputnik.create(:name => 'my pretty sputnik')
-            trans.rollback
-          end
-          Sputnik.all(:name => 'my pretty sputnik').should be_empty
-        end
-      end
-
-      it "should commit changes when #commit_transaction is called" do
-        repository(:mysql) do
-          @transaction.commit do
-            Sputnik.create(:name => 'my pretty sputnik')
-          end
-          Sputnik.all(:name => 'my pretty sputnik').size.should == 1
-        end
       end
     end
   end

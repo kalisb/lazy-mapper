@@ -1,5 +1,5 @@
-gem 'do_mysql'
-require 'do_mysql'
+gem 'mysql'
+require 'mysql'
 
 module LazyMapper
   module Adapters
@@ -120,5 +120,14 @@ module LazyMapper
     end # class MysqlAdapter
   end # module Adapters
   class Mysql
+    class Connection
+      def self.acquire(uri)
+        @connection = Mysql.new uri
+      end
+
+      def self.close
+        @connection.close
+      end
+    end
   end
 end # module LazyMapper

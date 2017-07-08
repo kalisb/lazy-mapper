@@ -21,10 +21,40 @@ if HAS_SQLITE3
         expect(@adapter.storage_exists?("sputniks")).to be false
         Sputnik.auto_migrate!(:sqlite3)
         expect(@adapter.storage_exists?("sputniks")).to be true
-        @adapter.field_exists?("sputniks", "new_prop").should == false
+        expect(@adapter.field_exists?("sputniks", "new_prop")).to be false
         Sputnik.property :new_prop, Integer
         Sputnik.auto_upgrade!(:sqlite3)
-        @adapter.field_exists?("sputniks", "new_prop").should == true
+        expect(@adapter.field_exists?("sputniks", "new_prop")).to be true
+      end
+    end
+    describe "querying metadata" do
+      before :all do
+        class Sputnik
+          include LazyMapper::Resource
+
+          property :id, Integer
+          property :name, String
+        end
+      end
+
+      before do
+        Sputnik.auto_upgrade!(:sqlite3)
+      end
+
+      it "#storage_exists? should return true for tables that exist" do
+        expect(@adapter.storage_exists?("sputniks")).to be true
+      end
+
+      it "#storage_exists? should return false for tables that don't exist" do
+        expect(@adapter.storage_exists?("space turds")).to be false
+      end
+
+      it "#field_exists? should return true for columns that exist" do
+        expect(@adapter.field_exists?("sputniks", "name")).to be true
+      end
+
+      it "#storage_exists? should return false for tables that don't exist" do
+        expect(@adapter.field_exists?("sputniks", "plur")).to be false
       end
     end
   end

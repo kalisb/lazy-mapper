@@ -46,6 +46,13 @@ module LazyMapper
       end
     end
 
+    def hash
+      if @custom && !@bound
+        @type.bind(self)
+      end
+      return @model.hash + @name.hash
+    end
+
     def length
       @length.is_a?(Range) ? @length.max : @length
     end

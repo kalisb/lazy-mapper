@@ -12,16 +12,24 @@ module LazyMapper
 
     end
   end
-end
-
-module DataObjects
   module Mock
 
-    def self.logger
-    end
+      def self.logger
+      end
 
-    def self.logger=(value)
-    end
+      def self.logger=(value)
+      end
 
+      class Connection
+        def self.acquire(uri)
+          @connection = self
+        end
+
+        def self.close
+        end
+
+        def self.execute(args)
+        end
+      end
   end
 end
