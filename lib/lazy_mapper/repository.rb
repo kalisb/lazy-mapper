@@ -121,11 +121,6 @@ module LazyMapper
       end
     end
 
-    ##
-    # Produce a new Transaction for this Repository
-    def transaction
-      LazyMapper::Transaction.new(self)
-    end
 
     def to_s
       "#<LazyMapper::Repository:#{@name}>"

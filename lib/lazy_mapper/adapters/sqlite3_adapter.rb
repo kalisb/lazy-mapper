@@ -54,13 +54,11 @@ module LazyMapper
         def create_table_statement(model)
           statement = "CREATE TABLE #{model.storage_name(name)} ("
           array = model.properties.collect {|p| property_schema_hash(p, model) }
-          array.each { |prop|
-            statement << "#{prop[:name]} #{prop[:primitive]}"
-          }
-        #  statement << "#{model.properties.collect {|p| property_schema_hash(p, model) } * ', '}"
+
+          statement << "#{model.properties.collect {|p| property_schema_statement(property_schema_hash(p, model)) } * ', '}"
 
           if (key = model.properties.key).any?
-            statement << " PRIMARY KEY(#{ key.collect { |p| p.field(name) } * ', '})"
+            statement << ", PRIMARY KEY(#{ key.collect { |p| p.field(name) } * ', '})"
           end
 
           statement << ')'

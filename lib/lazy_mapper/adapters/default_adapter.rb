@@ -32,14 +32,16 @@ module LazyMapper
 
         identity_field = begin
           key = resource.class.key(name)
-          key.first if key.size == 1 && key.first.serial?
+          key.first if key.size == 1
         end
 
         statement = create_statement(resource.class, dirty_attributes, identity_field)
         bind_values = dirty_attributes.map { |p| resource.instance_variable_get(p.instance_variable_name) }
         result = execute(statement, *bind_values)
-
-        return false if result.to_i != 1
+        result.each { |row|
+          puts row
+        }
+        return false if result.size != 1
 
         if identity_field
           resource.instance_variable_set(identity_field.instance_variable_name, result.insert_id)
@@ -72,6 +74,15 @@ module LazyMapper
         end
       end
 
+      def read_set(repository, query)
+       read_set_with_sql(repository,
+                         query.model,
+                         query.fields,
+                         query_read_statement(query),
+                         query.parameters,
+                         query.reload?)
+      end
+
       def update(repository, resource)
         dirty_attributes = resource.dirty_attributes
 
@@ -92,14 +103,14 @@ module LazyMapper
         statement = delete_statement(resource.class, key)
         bind_values = key.map { |p| resource.instance_variable_get(p.instance_variable_name) }
 
-        execute(statement, *bind_values).to_i == 1
+        execute(statement, *bind_values).size == 1
       end
 
       # Database-specific method
       def execute(statement, *args)
         with_connection do |connection|
-          connection.execute(statement)
-          #command.execute_non_query(*args)
+          puts statement
+          connection.execute(statement, args)
         end
       end
 
@@ -253,18 +264,11 @@ module LazyMapper
         properties_with_indexes = Hash[*properties.zip((0...properties.length).to_a).flatten]
         Collection.new(repository, model, properties_with_indexes) do |set|
           with_connection do |connection|
-            begin
-              command = connection.create_command(sql)
-              command.set_types(properties.map { |p| p.primitive })
-
-              reader = command.execute_reader(*parameters)
-
-              while(reader.next!)
-                set.load(reader.values, do_reload)
-              end
-            ensure
-              reader.close if reader
-            end
+            rows = []
+            execute(sql).each { |row|
+              rows << row
+            }
+            puts rows
           end
         end
       end
@@ -563,16 +567,9 @@ module LazyMapper
         # TODO: move to dm-more/dm-migrations
         def property_schema_hash(property, model)
           schema = self.class.type_map[property.type].merge(:name => property.field(name))
-          # TODO: figure out a way to specify the size not be included, even if
-          # a default is defined in the typemap
-          #  - use this to make it so all TEXT primitive fields do not have size
-          if property.type == String && schema[:primitive] != 'TEXT'
-            schema[:size] = property.length
-          elsif property.type == BigDecimal || property.type == Float
-            schema[:scale]     = property.scale
-            schema[:precision] = property.precision
+          if property.type == String
+            schema[:size] = 30
           end
-
           schema
         end
 
@@ -580,6 +577,11 @@ module LazyMapper
         def property_schema_statement(schema)
           statement = quote_column_name(schema[:name])
           statement << " #{schema[:primitive]}"
+
+          if schema[:size]
+              statement << "(#{quote_column_value(schema[:size])})"
+          end
+
           statement
         end
 

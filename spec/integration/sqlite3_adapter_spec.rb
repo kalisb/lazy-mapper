@@ -11,8 +11,8 @@ if HAS_SQLITE3
         class Sputnik
           include LazyMapper::Resource
 
-          property :id, Integer#, :key => true
-          #property :name, String
+          property :id, Integer, :key => true
+          property :name, String
         end
       end
 

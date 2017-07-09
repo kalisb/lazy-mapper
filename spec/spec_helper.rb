@@ -1,4 +1,6 @@
 require 'pathname'
+require 'simplecov'
+SimpleCov.start
 
 require Pathname(__FILE__).dirname.expand_path.parent + 'lib/lazy_mapper'
 require LazyMapper.root / 'spec' / 'lib' / 'mock_adapter'
