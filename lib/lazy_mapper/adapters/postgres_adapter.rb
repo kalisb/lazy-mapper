@@ -3,6 +3,10 @@ class PG::Connection
   def execute(statement)
     self.exec statement
   end
+
+  def execute(statement, *args)
+    self.exec(statement, *args)
+  end
 end
 
 module LazyMapper
