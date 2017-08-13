@@ -39,4 +39,24 @@ class Symbol
     LazyMapper::Query::Operator.new(self, :desc)
   end
 
+  def count
+    LazyMapper::Query::Operator.new(self, :count)
+  end
+
+  def min
+    LazyMapper::Query::Operator.new(self, :min)
+  end
+
+  def max
+    LazyMapper::Query::Operator.new(self, :max)
+  end
+
+  def avg
+    LazyMapper::Query::Operator.new(self, :avg)
+  end
+
+  def sum
+    LazyMapper::Query::Operator.new(self, :sum)
+  end
+
 end # class Symbol

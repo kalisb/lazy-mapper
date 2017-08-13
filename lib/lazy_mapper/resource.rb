@@ -18,6 +18,7 @@ module LazyMapper
     # Resource module methods
 
     def self.included(model)
+      model.extend Model
       model.extend ClassMethods
       @@descendents << model
     end
@@ -449,6 +450,41 @@ module LazyMapper
         end
       end
 
+      # Count results (given the conditions)
+      def count(*args)
+        with_repository_and_property(*args) do |repository,property,options|
+           repository.count(self, property, options)
+        end
+      end
+
+      def min(*args)
+       with_repository_and_property(*args) do |repository,property,options|
+         check_property_is_number(property)
+         repository.min(self, property, options)
+       end
+     end
+
+     def max(*args)
+        with_repository_and_property(*args) do |repository,property,options|
+          check_property_is_number(property)
+          repository.max(self, property, options)
+        end
+    end
+
+    def avg(*args)
+        with_repository_and_property(*args) do |repository,property,options|
+          check_property_is_number(property)
+          repository.avg(self, property, options)
+        end
+    end
+
+    def sum(*args)
+       with_repository_and_property(*args) do |repository,property,options|
+         check_property_is_number(property)
+         repository.sum(self, property, options)
+       end
+    end
+
       ##
       # Create an instance of Resource with the given attributes
       #
@@ -510,6 +546,16 @@ module LazyMapper
 
       def default_repository_name
         Repository.default_name
+      end
+
+      def with_repository_and_property(*args, &block)
+        options       = Hash === args.last ? args.pop : {}
+        property_name = args.shift
+
+        repository(*Array(options[:repository])) do |repository|
+          property = properties(repository.name)[property_name] if property_name
+          yield repository, property, options
+        end
       end
 
     end # module ClassMethods

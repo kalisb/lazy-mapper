@@ -49,6 +49,26 @@ module LazyMapper
       adapter.read_set(self, query).first
     end
 
+    def count(model, property, options)
+      @adapter.count(self, property, scoped_query(model, options))
+    end
+
+    def min(model, property, options)
+     @adapter.min(self, property, scoped_query(model, options))
+   end
+
+   def max(model, property, options)
+     @adapter.max(self, property, scoped_query(model, options))
+   end
+
+   def avg(model, property, options)
+     @adapter.avg(self, property, scoped_query(model, options))
+   end
+
+   def sum(model, property, options)
+     @adapter.sum(self, property, scoped_query(model, options))
+   end
+
     ##
     # retrieve a collection of results of a query
     def all(model, options)
@@ -155,6 +175,14 @@ module LazyMapper
       @name          = name
       @adapter       = self.class.adapters[name]
       @identity_maps = Hash.new { |h,model| h[model] = IdentityMap.new }
+    end
+
+    def scoped_query(model, options)
+      if current_scope = model.send(:current_scope)
+        current_scope.merge(options)
+      else
+        Query.new(self, model, options)
+      end
     end
 
   end # class Repository

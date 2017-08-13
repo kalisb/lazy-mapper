@@ -78,9 +78,6 @@ module LazyMapper
       def self.close
         @connection.close
       end
-
-      def self.create_command(statement)
-      end
     end
   end
 end # module LazyMapper

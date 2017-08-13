@@ -2,6 +2,7 @@ require 'pathname'
 require Pathname(__FILE__).dirname.expand_path.parent + 'lib/lazy_mapper'
 
 LazyMapper.setup(:default,  'sqlite3::memory:')
+#LazyMapper.setup(:default, 'postgres://postgres:test@localhost/testdb')
 @adapter = repository(:default).adapter
 
 # Възможност за логване на направените към базата
@@ -37,6 +38,7 @@ puts "Created table author: " + @adapter.storage_exists?("authors").to_s
 # ваш избор - например SQLite и PostgreSQL. Можете да използвате
 # gem-ове като sqlite3 за комуникация със съответната база от данни.
 # Нямате право да използвате наготово ORM библиотеки.
+
 #LazyMapper.setup(:default, 'postgres://postgres:test@localhost/testdb')
 
 # Създаване, четене, изтриване и ъпдейт (CRUD)
@@ -57,16 +59,20 @@ puts Article.all
 puts Article.all(:order => [ :title.desc ])
 
 # Филтриране по стойностите на един или повече атрибути (включително с неравенства)
+puts Article.all(:body => 'Article text')
 
 # Лимитиране на брой върнати резултати при заявка
 puts Article.all(:limit => 2)
 
 # Пропускане на определен брой записи от заявка
+puts Article.all(:limit => 2, :offset => 3)
 
 # Горните могат да се комбиринат и chain-ват
 # (например, User.where(first_name: 'a').where(last_name: 'b').order(first_name: :desc))
+puts Article.all(:order => [ :title.desc ], :limit => 2)
 
 # Да се поддържат прости агрегации като count и avg
+puts Article.count(:body => 'Article text')
 
 # В доста от случаите моделите са свързани по някакъв начин.
 # Например, един потребител може да има много коментари. Имплементирайте
