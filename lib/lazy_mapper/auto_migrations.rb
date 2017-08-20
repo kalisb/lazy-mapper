@@ -33,9 +33,7 @@ module LazyMapper
 
 
 
-   module Resource
-     module ClassMethods
-       include AutoMigrations
-    end # module ClassMethods
-  end # module Resource
+   module ClassMethods
+     include AutoMigrations
+  end # module ClassMethods
 end # module LazyMapper

@@ -85,9 +85,7 @@ module LazyMapper
     end
   end # module Associations
 
-  module Resource
-    module ClassMethods
-      include LazyMapper::Associations
-    end # module ClassMethods
-  end # module Resource
+  module ClassMethods
+    include LazyMapper::Associations
+  end # module ClassMethods
 end # module LazyMapper

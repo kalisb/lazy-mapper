@@ -192,7 +192,7 @@ module LazyMapper
     private
 
     def initialize(model, name, type, options = {})
-      raise ArgumentError, "+model+ is a #{model.class}, but is not a type of Resource"                 unless Resource > model
+      raise ArgumentError, "+model+ is a #{model.class}, but is not a type of Resource"                 unless Model > model
       raise ArgumentError, "+name+ should be a Symbol, but was #{name.class}"                           unless Symbol === name
       raise ArgumentError, "+type+ was #{type.inspect}, which is not a supported type: #{TYPES * ', '}" unless TYPES.include?(type) || (LazyMapper::Type > type && TYPES.include?(type.primitive))
 

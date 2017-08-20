@@ -84,7 +84,7 @@ module LazyMapper
     # Provides a standardized setter method for the property
     def set(resource, value)
       lazy_load(resource)
-      raise ArgumentError, "+resource+ should be a LazyMapper::Resource, but was #{resource.class}" unless Resource === resource
+      raise ArgumentError, "+resource+ should be a LazyMapper::Resource, but was #{resource.class}" unless Model === resource
       resource.attribute_set(@name, value)
     end
 
@@ -120,7 +120,7 @@ module LazyMapper
     private
 
     def initialize(model, name, type, options = {})
-      raise ArgumentError, "+model+ is a #{model.class}, but is not a type of Resource"                 unless Resource > model
+      raise ArgumentError, "+model+ is a #{model.class}, but is not a type of Resource"                 unless Model > model
       raise ArgumentError, "+name+ should be a Symbol, but was #{name.class}"                           unless Symbol === name
 
       if (unknown_options = options.keys - PROPERTY_OPTIONS).any?

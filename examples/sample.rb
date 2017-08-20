@@ -12,18 +12,15 @@ LazyMapper.setup(:default,  'sqlite3::memory:')
 # Минимално ниво на лог записите, които да се виждат в лога.
 LazyMapper::Logger.new(nil, :debug)
 
-class Article
-  include LazyMapper::Resource
-
+class Article < LazyMapper::Model
+  include  LazyMapper::ClassMethods
   property :title, String, :key => true
   property :body,  String
 end
 
-class Author
-  include LazyMapper::Resource
-
+class Author < LazyMapper::Model
   property :name, String, :key => true
-  has n, :articles
+  #has n, :articles
 end
 
 # Искаме да можем да свържем произволен написан от нас клас
@@ -44,6 +41,8 @@ puts "Created table author: " + @adapter.storage_exists?("authors").to_s
 # Създаване, четене, изтриване и ъпдейт (CRUD)
 article = Article.new(:title => 'Firsrt Article', :body => 'Article text')
 article.save()
+puts article.title
+puts article.body
 puts Article.all
 article.title = "Second Article"
 article.save()

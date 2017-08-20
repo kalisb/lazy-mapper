@@ -31,9 +31,7 @@ module LazyMapper
     end
   end # module Scope
 
-  module Resource
-    module ClassMethods
-      include Scope
-    end # module ClassMethods
-  end # module Resource
+  module ClassMethods
+    include Scope
+  end # module ClassMethods
 end # module LazyMapper

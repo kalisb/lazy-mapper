@@ -274,7 +274,7 @@ module LazyMapper
     # validate the model
     def validate_model(model)
       raise ArgumentError, "+model+ must be a Class, but is #{model.class}" unless Class === model.class
-      raise ArgumentError, '+model+ must include LazyMapper::Resource'      unless Resource > model
+      raise ArgumentError, '+model+ must include LazyMapper::Resource'      unless Model > model
     end
 
     # validate the options

@@ -93,7 +93,7 @@ module LazyMapper
     #   { Property<:id> => 1, Property<:name> => 2, Property<:notes> => 3 }
     def initialize(repository, model, properties_with_indexes, &loader)
       raise ArgumentError, "+repository+ must be a LazyMapper::Repository, but was #{repository.class}", caller unless repository.kind_of?(Repository)
-      raise ArgumentError, "+model+ is a #{model.class}, but is not a type of Resource", caller                 unless model < Resource
+      raise ArgumentError, "+model+ is a #{model.class}, but is not a type of Resource", caller                 unless model < Model
 
       @repository              = repository
       @model                   = model
