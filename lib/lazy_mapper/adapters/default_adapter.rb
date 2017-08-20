@@ -38,9 +38,6 @@ module LazyMapper
         statement = create_statement(resource.class, dirty_attributes, identity_field)
         bind_values = dirty_attributes.map { |p| resource.instance_variable_get(p.instance_variable_name) }
         result = execute(statement, *bind_values)
-        result.each { |row|
-          puts row
-        }
         return false if result.size != 1
 
         if identity_field
@@ -109,7 +106,7 @@ module LazyMapper
       # Database-specific method
       def execute(statement, *args)
         with_connection do |connection|
-          puts statement
+          puts statement + " " + args.to_s
           connection.execute(statement, args)
         end
       end
@@ -276,28 +273,17 @@ module LazyMapper
         end
       end
 
-      #
       # used by find_by_sql and read_set
-      #
-      # @param repository<LazyMapper::Repository> the repository to read from.
-      # @param model<Object>  the class of the instances to read.
-      # @param properties<Array>  the properties to read. Must contain Symbols,
-      #   Strings or DM::Properties.
-      # @param sql<String>  the query to execute.
-      # @param parameters<Array>  the conditions to the query.
-      # @param do_reload<Boolean> whether to reload objects already found in the
-      #   identity map.
-      #
-      # @return <Collection> a set of the found instances.
       def read_set_with_sql(repository, model, properties, sql, parameters, do_reload)
         properties_with_indexes = Hash[*properties.zip((0...properties.length).to_a).flatten]
         Collection.new(repository, model, properties_with_indexes) do |set|
           with_connection do |connection|
             rows = []
-            execute(sql).each { |row|
+            execute(sql, *
+			parameters).each { |row|
               rows << row
             }
-            puts rows
+			rows
           end
         end
       end
@@ -552,15 +538,13 @@ module LazyMapper
           false
         end
 
-        # TODO: move to dm-more/dm-migrations
         def alter_table_add_column_statement(table_name, schema_hash)
           "ALTER TABLE #{quote_table_name(table_name)} ADD COLUMN #{property_schema_statement(schema_hash)}"
         end
-
-        # TODO: move to dm-more/dm-migrations
+		
         def create_table_statement(model)
           statement = "CREATE TABLE #{quote_table_name(model.storage_name(name))} ("
-          statement << "#{model.properties(name).collect { |p| property_schema_statement(property_schema_hash(p, model)) } * ', '}"
+          statement << "#{model.properties(name).collect { |p| puts p.name; property_schema_statement(property_schema_hash(p, model)) } * ', '}"
 
           if (key = model.key(name)).any?
             statement << ", PRIMARY KEY(#{ key.collect { |p| quote_column_name(p.field(name)) } * ', '})"
@@ -570,12 +554,10 @@ module LazyMapper
           statement.compress_lines
         end
 
-        # TODO: move to dm-more/dm-migrations
         def drop_table_statement(model)
           "DROP TABLE IF EXISTS #{model.storage_name(name)}"
         end
 
-        # TODO: move to dm-more/dm-migrations
         def create_index_statements(model)
           table_name = model.storage_name(name)
           model.properties.indexes.collect do |index_name, properties|
@@ -584,7 +566,6 @@ module LazyMapper
           end
         end
 
-        # TODO: move to dm-more/dm-migrations
         def create_unique_index_statements(model)
           table_name = model.storage_name(name)
           model.properties.unique_indexes.collect do |index_name, properties|
@@ -593,7 +574,6 @@ module LazyMapper
           end
         end
 
-        # TODO: move to dm-more/dm-migrations
         def property_schema_hash(property, model)
           schema = self.class.type_map[property.type].merge(:name => property.field(name))
           if property.type == String
@@ -602,7 +582,6 @@ module LazyMapper
           schema
         end
 
-        # TODO: move to dm-more/dm-migrations
         def property_schema_statement(schema)
           statement = quote_column_name(schema[:name])
           statement << " #{schema[:primitive]}"

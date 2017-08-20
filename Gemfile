@@ -4,8 +4,10 @@ source 'https://rubygems.org'
 gemspec
 group :development do
   gem "sqlite3"
-  gem "mysql"
+  gem "pg"
   gem 'addressable'
+  gem 'json'
+  gem 'simplecov'
   gem 'english', '>=0.2.0'
   gem 'fastercsv', '>=1.2.3'
 end

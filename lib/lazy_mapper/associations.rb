@@ -75,7 +75,7 @@ module LazyMapper
         when Range
           raise ArgumentError, "Constraint min (#{constraints.first}) cannot be larger than the max (#{constraints.last})" if constraints.first > constraints.last
           { :min => constraints.first, :max => constraints.last }
-        when Fixnum, Bignum
+        when Integer
           { :min => constraints, :max => constraints }
         when n
           {}

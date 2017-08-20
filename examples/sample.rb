@@ -1,8 +1,8 @@
 require 'pathname'
 require Pathname(__FILE__).dirname.expand_path.parent + 'lib/lazy_mapper'
 
-LazyMapper.setup(:default,  'sqlite3::memory:')
-#LazyMapper.setup(:default, 'postgres://postgres:test@localhost/testdb')
+#LazyMapper.setup(:default,  'sqlite3::memory:')
+LazyMapper.setup(:default, 'postgres://postgres:test@localhost/testdb')
 @adapter = repository(:default).adapter
 
 # Възможност за логване на направените към базата
@@ -10,7 +10,7 @@ LazyMapper.setup(:default,  'sqlite3::memory:')
 # Дали да логва на стандартния изход или във файл.
 # Лог записи на различни нива - DEBUG, INFO, ERROR.
 # Минимално ниво на лог записите, които да се виждат в лога.
-LazyMapper::Logger.new(nil, :debug)
+LazyMapper::Logger.new(nil, :info)
 
 class Article < LazyMapper::Model
   include  LazyMapper::ClassMethods
