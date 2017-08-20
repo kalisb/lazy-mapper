@@ -1,21 +1,18 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-class Vegetable
-  include LazyMapper::Resource
+class Vegetable < LazyMapper::Model
 
   property :id, Integer, :key => true
   property :name, String
 end
 
-class Fruit
-  include LazyMapper::Resource
+class Fruit < LazyMapper::Model
 
   property :id, Integer, :key => true
   property :name, String
 end
 
-class Grain
-  include LazyMapper::Resource
+class Grain < LazyMapper::Model
 
   property :id, Integer, :key => true
   property :name, String

@@ -59,7 +59,6 @@ module LazyMapper
       end
 
       def child_model
-        puts @child_model_name
         find_const(@child_model_name)
       end
 

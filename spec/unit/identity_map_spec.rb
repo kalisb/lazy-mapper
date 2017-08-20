@@ -2,25 +2,22 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 describe "LazyMapper::IdentityMap" do
   before(:all) do
-    class Cow
-      include LazyMapper::Resource
+    class Cow < LazyMapper::Model
       property :id, Integer, :key => true
       property :name, String
     end
 
-    class Chicken
-      include LazyMapper::Resource
+    class Chicken < LazyMapper::Model
       property :name, String
     end
 
-    class Pig
-      include LazyMapper::Resource
+    class Pig < LazyMapper::Model
       property :id, Integer, :key => true
       property :composite, Integer, :key => true
       property :name, String
     end
   end
-  
+
   it "should return nil on #get when it does not find the requested instance" do
     map = LazyMapper::IdentityMap.new
     expect(map.get([23])).to be_nil

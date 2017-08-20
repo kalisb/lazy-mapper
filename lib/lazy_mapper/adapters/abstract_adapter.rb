@@ -4,123 +4,12 @@ module LazyMapper
     class AbstractAdapter
       attr_accessor :resource_naming_convention, :field_naming_convention
 
-      # Default TypeMap for all adapters.
-      #
-      # @return <LazyMapper::TypeMap> default TypeMap
       def self.type_map
         @type_map ||= TypeMap.new
       end
 
       attr_reader :name, :uri
       attr_accessor :resource_naming_convention, :field_naming_convention
-
-      # Methods dealing with a single resource object
-      def create(repository, resource)
-        raise NotImplementedError
-      end
-
-      def read(repository, resource, key)
-        raise NotImplementedError
-      end
-
-      def update(repository, resource)
-        raise NotImplementedError
-      end
-
-      def delete(repository, resource)
-        raise NotImplementedError
-      end
-
-      # Methods dealing with locating a single object, by keys
-      def read_one(repository, query)
-        raise NotImplementedError
-      end
-
-      # Methods dealing with finding stuff by some query parameters
-      def read_set(repository, query)
-        raise NotImplementedError
-      end
-
-      def delete_set(repository, query)
-        raise NotImplementedError
-      end
-
-      # # Shortcuts
-      # Deprecated in favor of read_one
-      # def first(repository, resource, query = {})
-      #   raise ArgumentError, "You cannot pass in a :limit option to #first" if query.key?(:limit)
-      #   read_set(repository, resource, query.merge(:limit => 1)).first
-      # end
-
-      # Future Enumerable/convenience finders. Please leave in place. :-)
-      # def each(repository, klass, query)
-      #   raise NotImplementedError
-      #   raise ArgumentError unless block_given?
-      # end
-
-      #
-      # Returns whether the storage_name exists.
-      #
-      # @param storage_name<String> a String defining the name of a storage,
-      #   for example a table name.
-      #
-      # @return <Boolean> true if the storage exists
-      #
-      # TODO: move to dm-more/dm-migrations (if possible)
-      def storage_exists?(storage_name)
-        raise NotImplementedError
-      end
-
-      # TODO: remove this alias
-      alias exists? storage_exists?
-
-      #
-      # Returns whether the field exists.
-      #
-      # @param storage_name<String> a String defining the name of a storage, for example a table name.
-      # @param field_name<String> a String defining the name of a field, for example a column name.
-      #
-      # @return <Boolean> true if the field exists.
-      #
-      # TODO: move to dm-more/dm-migrations (if possible)
-      def field_exists?(storage_name, field_name)
-        raise NotImplementedError
-      end
-
-      # TODO: move to dm-more/dm-migrations
-      def upgrade_model_storage(repository, model)
-        raise NotImplementedError
-      end
-
-      # TODO: move to dm-more/dm-migrations
-      def create_model_storage(repository, model)
-        raise NotImplementedError
-      end
-
-      # TODO: move to dm-more/dm-migrations
-      def destroy_model_storage(repository, model)
-        raise NotImplementedError
-      end
-
-      # TODO: move to dm-more/dm-migrations
-      def alter_model_storage(repository, *args)
-        raise NotImplementedError
-      end
-
-      # TODO: move to dm-more/dm-migrations
-      def create_property_storage(repository, property)
-        raise NotImplementedError
-      end
-
-      # TODO: move to dm-more/dm-migrations
-      def destroy_property_storage(repository, property)
-        raise NotImplementedError
-      end
-
-      # TODO: move to dm-more/dm-migrations
-      def alter_property_storage(repository, *args)
-        raise NotImplementedError
-      end
 
       # methods dealing with transactions
 
@@ -129,10 +18,6 @@ module LazyMapper
       # that everything done by this Adapter is done within the context of said
       # Transaction.
       #
-      # @param transaction<LazyMapper::Transaction> a Transaction to be the
-      #   'current' transaction until popped.
-      #
-      # TODO: move to dm-more/dm-transaction
       def push_transaction(transaction)
         @transactions[Thread.current] << transaction
       end
@@ -142,9 +27,6 @@ module LazyMapper
       # that everything done by this Adapter is no longer necessarily within the
       # context of said Transaction.
       #
-      # @return <LazyMapper::Transaction> the former 'current' transaction.
-      #
-      # TODO: move to dm-more/dm-transaction
       def pop_transaction
         @transactions[Thread.current].pop
       end
@@ -155,9 +37,6 @@ module LazyMapper
       # Everything done by this Adapter is done within the context of this
       # Transaction.
       #
-      # @return <LazyMapper::Transaction> the 'current' transaction for this Adapter.
-      #
-      # TODO: move to dm-more/dm-transaction
       def current_transaction
         @transactions[Thread.current].last
       end
@@ -165,24 +44,8 @@ module LazyMapper
       #
       # Returns whether we are within a Transaction.
       #
-      # @return <Boolean> whether we are within a Transaction.
-      #
-      # TODO: move to dm-more/dm-transaction
       def within_transaction?
         !current_transaction.nil?
-      end
-
-      #
-      # Produces a fresh transaction primitive for this Adapter
-      #
-      # Used by LazyMapper::Transaction to perform its various tasks.
-      #
-      # @return <Object> a new Object that responds to :close, :begin, :commit,
-      #   :rollback, :rollback_prepared and :prepare
-      #
-      # TODO: move to dm-more/dm-transaction (if possible)
-      def transaction_primitive
-        raise NotImplementedError
       end
 
       protected
@@ -208,4 +71,109 @@ module LazyMapper
       end
     end # class AbstractAdapter
   end # module Adapters
+  class Command
+    attr_reader :text, :timeout, :connection
+
+    # initialize creates a new Command object
+    def initialize(connection, text)
+      @connection, @text = connection, text
+    end
+  end
+  class Connection
+
+    def self.inherited(base)
+      base.instance_variable_set('@connection_lock', Mutex.new)
+      base.instance_variable_set('@available_connections', Hash.new { |h,k| h[k] = [] })
+      base.instance_variable_set('@reserved_connections', Set.new)
+
+      if driver_module_name = base.name.split('::')[-2]
+        driver_module = LazyMapper::const_get(driver_module_name)
+        driver_module.class_eval <<-EOS
+          def self.logger
+            @logger
+          end
+          def self.logger=(logger)
+            @logger = logger
+          end
+        EOS
+
+        driver_module.logger = LazyMapper::Logger
+      end
+    end
+
+    def self.prepare(statement)
+    end
+
+    def self.new(uri)
+      uri = uri.is_a?(String) ? Addressable::URI::parse(uri) : uri
+      LazyMapper.const_get(uri.scheme.capitalize)::Connection.acquire(uri)
+    end
+
+    def self.acquire(connection_uri)
+      conn = nil
+      connection_string = connection_uri.to_s
+
+      @connection_lock.synchronize do
+        unless @available_connections[connection_string].empty?
+          conn = @available_connections[connection_string].pop
+        else
+          conn = allocate
+          conn.send(:initialize, connection_uri)
+          at_exit { conn.real_close }
+        end
+
+        @reserved_connections << conn
+      end
+
+      return conn
+    end
+
+    def self.release(connection)
+      @connection_lock.synchronize do
+        if @reserved_connections.delete?(connection)
+          @available_connections[connection.to_s] << connection
+        end
+      end
+      return nil
+    end
+
+    def close
+      self.class.release(self)
+    end
+
+    #####################################################
+    # Standard API Definition
+    #####################################################
+    def to_s
+      @uri.to_s
+    end
+
+    def initialize(uri)
+      raise NotImplementedError.new
+    end
+
+    def real_close
+      raise NotImplementedError.new
+    end
+
+    def create_command(text)
+      concrete_command.new(self, text)
+    end
+
+    private
+    def concrete_command
+      @concrete_command || begin
+
+        class << self
+          private
+          def concrete_command
+            @concrete_command
+          end
+        end
+
+        @concrete_command = LazyMapper::const_get(self.class.name.split('::')[-2]).const_get('Command')
+      end
+    end
+
+  end
 end # module LazyMapper

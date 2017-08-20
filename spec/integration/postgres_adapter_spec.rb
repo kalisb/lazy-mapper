@@ -8,10 +8,9 @@ if HAS_POSTGRES
 
       describe "auto migrating" do
       before :all do
-        class Sputnik
-          include LazyMapper::Resource
+        class Sputnik < LazyMapper::Model
 
-          property :id, Integer
+          property :id, Integer, :key => true
           property :name, String
         end
       end

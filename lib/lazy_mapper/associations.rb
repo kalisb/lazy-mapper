@@ -31,14 +31,6 @@ module LazyMapper
     # A shorthand, clear syntax for defining one-to-one, one-to-many and
     # many-to-many resource relationships.
     #
-    # @example [Usage]
-    #   * has 1, :friend                          # one_to_one, :friend
-    #   * has n, :friends                         # one_to_many :friends
-    #   * has 1..3, :friends
-    #                         # one_to_many :friends, :min => 1, :max => 3
-    #   * has 3, :friends
-    #                         # one_to_many :friends, :min => 3, :max => 3
-    #
     def has(cardinality, name, options = {})
       options = options.merge(extract_min_max(cardinality))
       options = options.merge(extract_throughness(name))
@@ -85,7 +77,7 @@ module LazyMapper
     end
   end # module Associations
 
-  module ClassMethods
-    include LazyMapper::Associations
+  class Model
+    extend LazyMapper::Associations
   end # module ClassMethods
 end # module LazyMapper

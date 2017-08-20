@@ -4,30 +4,18 @@ require 'bigdecimal'
 
 module LazyMapper
 
-  # = Properties
+  ##
   # Properties for a model are not derived from a database structure, but
   # instead explicitly declared inside your model class definitions. These
   # properties then map fields in your # repository/database.
-  #
-  # == Declaring Properties
-  # Inside your class, you call the property method for each property you want
-  # to add. The only two required arguments are the name and type, everything
-  # else is optional.
-  #
-  # == Lazy Loading
-  # By default, some properties are not loaded when an object is fetched in
-  # LazyMapper. These lazily loaded properties are fetched on demand when their
-  # accessor is called for the first time (as it is often unnecessary to
-  # instantiate -every- property -every- time an object is loaded).
-  #
-  # == Keys
-  # Properties can be declared as primary keys on a table.
   #
   class Property
 
     PROPERTY_OPTIONS = [ :key, :lazy ]
 
     attr_reader :model, :name, :type, :options, :length, :instance_variable_name
+
+    DEFAULT_LENGTH = 50
 
     # Supplies the field in the data-store which the property corresponds to
     def field(*args)
@@ -77,7 +65,7 @@ module LazyMapper
     # Provides a standardized getter method for the property
     def get(resource)
       lazy_load(resource)
-      raise ArgumentError, "+resource+ should be a LazyMapper::Resource, but was #{resource.class}" unless Resource === resource
+      raise ArgumentError, "+resource+ should be a LazyMapper::Resource, but was #{resource.class}" unless Model === resource
       resource.attribute_get(@name)
     end
 

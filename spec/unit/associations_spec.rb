@@ -7,17 +7,14 @@ describe "LazyMapper::Associations" do
   end
 
   describe ".relationships" do
-    class B
-      include LazyMapper::Resource
+    class B < LazyMapper::Model
     end
 
-    class C
-      include LazyMapper::Resource
+    class C < LazyMapper::Model
       has 1, :b
     end
 
-    class D
-      include LazyMapper::Resource
+    class D < LazyMapper::Model
       has 1, :b
     end
 
@@ -37,8 +34,7 @@ describe "LazyMapper::Associations" do
 
     it "should allow a declaration" do
       expect do
-        class Manufacturer
-          include LazyMapper::Resource
+        class Manufacturer < LazyMapper::Model
           has 1, :halo_car
         end
       end.not_to raise_error
@@ -46,8 +42,7 @@ describe "LazyMapper::Associations" do
 
     it "should not allow a constraint that is not a Range, Fixnum, Bignum or Infinity" do
       expect do
-        class Manufacturer
-          include LazyMapper::Resource
+        class Manufacturer < LazyMapper::Model
           has '1', :halo_car
         end
       end.to raise_error(ArgumentError)

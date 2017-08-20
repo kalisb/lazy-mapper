@@ -8,8 +8,7 @@ if HAS_SQLITE3
 
     describe "auto migrating" do
       before :all do
-        class Sputnik
-          include LazyMapper::Resource
+        class Sputnik < LazyMapper::Model
 
           property :id, Integer, :key => true
           property :name, String
@@ -29,16 +28,15 @@ if HAS_SQLITE3
     end
     describe "querying metadata" do
       before :all do
-        class Sputnik
-          include LazyMapper::Resource
+        class Sputnik < LazyMapper::Model
 
-          property :id, Integer
+          property :id, Integer, :key => true
           property :name, String
         end
       end
 
       before do
-        Sputnik.auto_upgrade!(:sqlite3)
+        Sputnik.auto_migrate!(:sqlite3)
       end
 
       it "#storage_exists? should return true for tables that exist" do

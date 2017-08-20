@@ -33,7 +33,7 @@ module LazyMapper
         }
         rows
       end
-	  
+
 	  def equality_operator(query, table_name, operator, property, qualify, bind_value)
           case bind_value
             when Array             then "#{property_to_column_name(table_name, property, qualify)} IN $1"
@@ -45,7 +45,7 @@ module LazyMapper
             else "#{property_to_column_name(table_name, property, qualify)} = $1"
           end
       end
-	  
+
 	  def create_statement(model, dirty_attributes, identity_field)
           statement = "INSERT INTO #{quote_table_name(model.storage_name(name))} "
 
@@ -65,7 +65,7 @@ module LazyMapper
 
           statement
        end
-	   
+
 	   def update_statement(model, dirty_attributes, key)
           <<-EOS.compress_lines
             UPDATE #{quote_table_name(model.storage_name(name))}
@@ -73,7 +73,7 @@ module LazyMapper
             WHERE #{key.map { |p| "#{quote_column_name(p.field(name))} = $1" }.join(' AND ')}
           EOS
        end
-	   
+
 	   def delete_statement(model, key)
           <<-EOS.compress_lines
             DELETE FROM #{quote_table_name(model.storage_name(name))}
@@ -85,21 +85,22 @@ module LazyMapper
   module Postgres
     class Connection
       def self.acquire(uri)
-        @connection = PG.connect :dbname => 'postgres', :user => 'postgres', :password => 'test'
+        path = uri.path.delete '/'
+        @connection = PG.connect :dbname => path, :user => uri.user, :password => uri.password
       end
     end
   end
-  
+
   class PG::Result
-	def size() 
+	def size()
 		result_status
 	end
-	
-	def insert_id() 
+
+	def insert_id()
 		oid_value
 	end
-	
-	def to_i() 
+
+	def to_i()
 		self.to_a.size
 	end
   end

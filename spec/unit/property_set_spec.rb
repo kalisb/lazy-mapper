@@ -1,7 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-class Icon
-      include LazyMapper::Resource
+class Icon < LazyMapper::Model
 
       property :id, Integer
       property :name, String

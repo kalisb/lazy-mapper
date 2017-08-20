@@ -1,6 +1,6 @@
 require 'pathname'
-#require 'simplecov'
-#SimpleCov.start
+require 'simplecov'
+SimpleCov.start
 
 require Pathname(__FILE__).dirname.expand_path.parent + 'lib/lazy_mapper'
 require LazyMapper.root / 'spec' / 'lib' / 'mock_adapter'
@@ -30,6 +30,6 @@ end
 ENV['ADAPTER'] ||= 'sqlite3'
 
 HAS_SQLITE3  = setup_adapter(:sqlite3,  'sqlite3::memory:')
-HAS_POSTGRES = setup_adapter(:postgres, 'postgres://postgres@localhost/dm_core_test')
+HAS_POSTGRES = setup_adapter(:postgres, 'postgres://postgres:test@localhost/postgres')
 
 LazyMapper::Logger.new(nil, :debug)

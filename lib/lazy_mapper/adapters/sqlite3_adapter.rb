@@ -1,5 +1,3 @@
-require_relative 'connection'
-require_relative 'command'
 require 'sqlite3'
 module LazyMapper
   module Adapters
@@ -72,7 +70,11 @@ module LazyMapper
   module Sqlite3
     class Connection
       def self.acquire(uri)
-        @connection = SQLite3::Database.new uri
+        if (uri.path == ':memory:')
+          @connection = SQLite3::Database.new uri
+        else
+          @connection = SQLite3::Database.new uri.path
+        end
       end
 
       def self.close

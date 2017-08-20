@@ -3,12 +3,10 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 describe LazyMapper::Property do
 
   before(:all) do
-    class Zoo
-      include LazyMapper::Resource
+    class Zoo < LazyMapper::Model
     end
 
-    class Tomato
-      include LazyMapper::Resource
+    class Tomato < LazyMapper::Model
     end
   end
 
@@ -38,8 +36,7 @@ describe LazyMapper::Property do
   end
 
   it "should append ? to TrueClass property reader methods" do
-    class Potato
-      include LazyMapper::Resource
+    class Potato < LazyMapper::Model
       property :id, Integer, :key => true
       property :fresh, TrueClass
       property :public, TrueClass

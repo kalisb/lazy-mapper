@@ -42,7 +42,7 @@ module LazyMapper
     end
 
     def set(resource, values)
-      raise ArgumentError, "+resource+ should be a LazyMapper::Resource, but was #{resource.class}" unless Resource === resource
+      raise ArgumentError, "+resource+ should be a LazyMapper::Resource, but was #{resource.class}" unless Model === resource
       if Array === values
         raise ArgumentError, "+values+ must have a length of #{length}, but has #{values.length}", caller if values.length != length
       elsif !values.nil?

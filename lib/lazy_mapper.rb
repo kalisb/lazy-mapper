@@ -25,18 +25,10 @@ require dir / 'adapters'
 require dir / 'collection'
 require dir / 'version'
 
-# == Setup and Configuration
-# LazyMapper uses URIs or a connection hash to connect to your data-store.
+##
+# LazyMapper uses URIs to connect to your data-store.
 # URI connections takes the form of:
 #   LazyMapper.setup(:default, 'protocol://username:password@localhost:port/path/to/repo')
-#
-# === Logging
-# To turn on error logging to STDOUT, issue:
-#
-#   LazyMapper::Logger.new(STDOUT, 0)
-#
-# You can pass a file location ("/path/to/log/file.log") in place of STDOUT.
-# see LazyMapper::Logger for more information.
 #
 module LazyMapper
   def self.root
@@ -73,20 +65,9 @@ module LazyMapper
   end
 
   ##
-  #
-  # @details [Block Syntax]
   #   Pushes the named repository onto the context-stack,
   #   yields a new session, and pops the context-stack.
   #
-  #     results = LazyMapper.repository(:second_database) do |current_context|
-  #       ...
-  #     end
-  #
-  # @details [Non-Block Syntax]
-  #   Returns the current session, or if there is none,
-  #   a new Session.
-  #
-  #     current_repository = LazyMapper.repository
   def self.repository(*args) # :yields: current_context
     raise ArgumentError, "Can only pass in one optional argument, but passed in #{args.size} arguments", caller unless args.size <= 1
     raise ArgumentError, "First optional argument must be a Symbol, but was #{args.first.inspect}", caller      unless args.empty? || Symbol === args.first

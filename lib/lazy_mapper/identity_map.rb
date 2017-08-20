@@ -15,7 +15,7 @@ module LazyMapper
     # Add a resource to the IdentityMap
     def set(key, resource)
       raise ArgumentError, "+key+ is not an Array, but was #{key.class}"                            unless Array  === key
-      raise ArgumentError, "+resource+ should be a LazyMapper::Resource, but was #{resource.class}" unless Resource === resource
+      raise ArgumentError, "+resource+ should be a LazyMapper::Resource, but was #{resource.class}" unless Model === resource
 
       @second_level_cache.set(key, resource) if @second_level_cache
       @cache[key] = resource

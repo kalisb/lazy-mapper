@@ -98,7 +98,7 @@ module LazyMapper
       success = false
 
       # save the resource if is dirty, or is a new record with a serial key
-      if resource.dirty? || (resource.new_record?)
+      if resource.dirty? || resource.new_record?
         if resource.new_record?
           if adapter.create(self, resource)
             identity_map_set(resource)

@@ -1,22 +1,15 @@
-gem 'addressable', '>=1.0.4'
-require 'addressable/uri'
 module LazyMapper
   module Adapters
-
-    # You must inherit from the DoAdapter, and implement the
-    # required methods to adapt a database library for use with the LazyMapper.
     class DefaultAdapter < AbstractAdapter
 
+      ##
       # Default TypeMap for all data object based adapters.
       #
-      # @return <LazyMapper::TypeMap> default TypeMap for data objects adapters.
       def self.type_map
         @type_map ||= TypeMap.new(super) do |tm|
           tm.map(Integer).to('INT')
-          tm.map(String).to('VARCHAR').with(:size => 25)
-          tm.map(Class).to('VARCHAR').with(:size => 25)
-#          tm.map(BigDecimal).to('DECIMAL').with(:scale => Property::DEFAULT_SCALE, :precision => Property::DEFAULT_PRECISION)
-#          tm.map(Float).to('FLOAT').with(:scale => Property::DEFAULT_SCALE, :precision => Property::DEFAULT_PRECISION)
+          tm.map(String).to('VARCHAR').with(:size => Property::DEFAULT_LENGTH)
+          tm.map(Class).to('VARCHAR').with(:size => Property::DEFAULT_LENGTH)
           tm.map(DateTime).to('DATETIME')
           tm.map(Date).to('DATE')
           tm.map(Time).to('TIMESTAMP')
@@ -44,7 +37,7 @@ module LazyMapper
           resource.instance_variable_set(identity_field.instance_variable_name, result.insert_id)
         end
 
-        true
+        false
       end
 
       def read(repository, model, bind_values)
@@ -100,13 +93,14 @@ module LazyMapper
         statement = delete_statement(resource.class, key)
         bind_values = key.map { |p| resource.instance_variable_get(p.instance_variable_name) }
 
-        execute(statement, *bind_values).size == 1
+        execute(statement, *bind_values)
+        false
       end
 
       # Database-specific method
       def execute(statement, *args)
         with_connection do |connection|
-          puts statement + " " + args.to_s
+          LazyMapper.logger.info(statement)
           connection.execute(statement, args)
         end
       end
@@ -153,12 +147,10 @@ module LazyMapper
       end
 
       def create_model_storage(repository, model)
+
         return false if storage_exists?(model.storage_name(name))
         fail = false
         fail = true unless execute(create_table_statement(model))
-        #(create_index_statements(model) + create_unique_index_statements(model)).each do |sql|
-        #  fail = true unless execute(sql).to_i == 1
-        #end
         !fail
       end
 
@@ -222,7 +214,6 @@ module LazyMapper
         )
       end
 
-      # TODO: clean up once transaction related methods move to dm-more/dm-transactions
       def create_connection
         if within_transaction?
           current_transaction.primitive_for(self).connection
@@ -279,11 +270,10 @@ module LazyMapper
         Collection.new(repository, model, properties_with_indexes) do |set|
           with_connection do |connection|
             rows = []
-            execute(sql, *
-			parameters).each { |row|
+            execute(sql, *parameters).each { |row|
               rows << row
             }
-			rows
+			      rows
           end
         end
       end
@@ -541,10 +531,10 @@ module LazyMapper
         def alter_table_add_column_statement(table_name, schema_hash)
           "ALTER TABLE #{quote_table_name(table_name)} ADD COLUMN #{property_schema_statement(schema_hash)}"
         end
-		
+
         def create_table_statement(model)
           statement = "CREATE TABLE #{quote_table_name(model.storage_name(name))} ("
-          statement << "#{model.properties(name).collect { |p| puts p.name; property_schema_statement(property_schema_hash(p, model)) } * ', '}"
+          statement << "#{model.properties(name).collect { |p| property_schema_statement(property_schema_hash(p, model)) } * ', '}"
 
           if (key = model.key(name)).any?
             statement << ", PRIMARY KEY(#{ key.collect { |p| quote_column_name(p.field(name)) } * ', '})"

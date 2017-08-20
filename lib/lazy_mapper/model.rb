@@ -8,40 +8,17 @@ module LazyMapper
       model.instance_variable_set(:@properties,    Hash.new { |h,k| h[k] = k == Repository.default_name ? PropertySet.new : h[Repository.default_name].dup })
     end
 
-    def self.inherited(target)
-      puts 'in'
-      target.instance_variable_set(:@storage_names, @storage_names.dup)
-      target.instance_variable_set(:@properties, Hash.new { |h,k| h[k] = k == Repository.default_name ? self.properties(Repository.default_name).dup(target) : h[Repository.default_name].dup })
-      if @relationships
-        duped_relationships = {}; @relationships.each_pair{ |repos, rels| duped_relationships[repos] = rels.dup}
-        target.instance_variable_set(:@relationships, duped_relationships)
-      end
-    end
-
     ##
     # Get the repository with a given name, or the default one for the current
     # context, or the default one for this class.
     #
-    # @param name<Symbol>   the name of the repository wanted
-    # @param block<Block>   block to execute with the fetched repository as parameter
-    #
-    # @return <Object, LazyMapper::Respository> whatever the block returns,
-    #   if given a block, otherwise the requested repository.
-    #-
-    # @api public
     def repository(name = nil, &block)
-      #
-      # There has been a couple of different strategies here, but me (zond) and dkubb are at least
-      # united in the concept of explicitness over implicitness. That is - the explicit wish of the
-      # caller (+name+) should be given more priority than the implicit wish of the caller (Repository.context.last).
-      #
       LazyMapper.repository(*Array(name || (Repository.context.last ? nil : default_repository_name)), &block)
     end
 
     ##
-    # the name of the storage recepticle for this resource.  IE. table name, for database stores
+    # the name of the storage recepticle for this resource.
     #
-    # @return <String> the storage name (IE table name, for database stores) associated with this resource in the given repository
     def storage_name(repository_name = default_repository_name)
       @storage_names[repository_name]
     end
@@ -49,7 +26,6 @@ module LazyMapper
     ##
     # the names of the storage recepticles for this resource across all repositories
     #
-    # @return <Hash(Symbol => String)> All available names of storage recepticles
     def storage_names
       @storage_names
     end
@@ -57,10 +33,6 @@ module LazyMapper
     ##
     # defines a property on the resource
     #
-    # @param <Symbol> name the name for which to call this property
-    # @param <Type> type the type to define this property ass
-    # @param <Hash(Symbol => String)> options a hash of available options
-    # @see LazyMapper::Property
     def property(name, type, options = {})
       property = Property.new(self, name, type, options)
       @properties[repository.name] << property
@@ -76,8 +48,7 @@ module LazyMapper
 
       # Add the property to the lazy_loads set for this resources repository
       # only.
-      # TODO Is this right or should we add the lazy contexts to all
-      # repositories?
+      #
       if property.lazy?
         context = options.fetch(:lazy, :default)
         context = :default if context == true
@@ -482,20 +453,6 @@ module LazyMapper
       loop_thru = update_only.empty? ? hash.keys : update_only
       loop_thru.each {|attr|  send("#{attr}=", hash[attr])}
       save
-    end
-
-    ##
-    # Produce a new Transaction for the class of this Resource
-    #
-    # @return <LazyMapper::Adapters::Transaction
-    #   a new LazyMapper::Adapters::Transaction with all LazyMapper::Repositories
-    #   of the class of this LazyMapper::Resource added.
-    #-
-    # @api public
-    #
-    # TODO: move to dm-more/dm-transactions
-    def transaction(&block)
-      self.class.transaction(&block)
     end
 
     private
