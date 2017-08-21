@@ -1,7 +1,6 @@
 module LazyMapper
 
   # Tracks objects to help ensure that each object gets loaded only once.
-  # See: http://www.martinfowler.com/eaaCatalog/identityMap.html
   class IdentityMap
     # Get a resource from the IdentityMap
     def get(key)

@@ -11,7 +11,7 @@ module LazyMapper
   #
   class Property
 
-    PROPERTY_OPTIONS = [ :key, :lazy ]
+    PROPERTY_OPTIONS = [ :key, :lazy, :serial]
 
     attr_reader :model, :name, :type, :options, :length, :instance_variable_name
 
@@ -56,6 +56,10 @@ module LazyMapper
     # Returns whether or not the property is a key or a part of a key
     def key?
       @key
+    end
+
+    def serial?
+      @serial
     end
 
     def default_for(resource)
@@ -125,6 +129,7 @@ module LazyMapper
       @primitive = @options.fetch(:primitive, @type.respond_to?(:primitive) ? @type.primitive : @type)
 
       @getter   = TrueClass == @primitive ? "#{@name}?".to_sym : @name
+      @serial = @options.fetch(:serial, false)
       @key      = @options.fetch(:key,      @serial || false)
       @lazy = @options.fetch(:lazy, @type.respond_to?(:lazy) ? @type.lazy : false) && !@key
 

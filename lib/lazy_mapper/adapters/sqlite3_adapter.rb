@@ -16,7 +16,7 @@ module LazyMapper
 
       def storage_exists?(table_name)
         size = 0
-        execute('PRAGMA table_info(\'' + table_name + '\')').each { |row|
+        execute('PRAGMA table_info(\'' + table_name + '\')').affected_rows.each { |row|
           size += 1
         }
         size > 0
@@ -68,13 +68,35 @@ module LazyMapper
     end # class Sqlite3Adapter
   end # module Adapters
   module Sqlite3
-    class Connection
+    class Command < LazyMapper::Command
+      def execute_non_query(*args)
+        rows = @connection.execute @text, *args
+        result = Result.new(self, rows, @connection.last_insert_row_id)
+        result
+      end
+    end
+    class Reader < LazyMapper::Reader
+    end
+    class Connection < LazyMapper::Connection
       def self.acquire(uri)
-        if (uri.path == ':memory:')
-          @connection = SQLite3::Database.new uri
-        else
-          @connection = SQLite3::Database.new uri.path
+        conn = nil
+        @connection_lock.synchronize do
+          unless @available_connections[uri].empty?
+            conn = @available_connections[uri].pop
+          else
+            if (uri.path == ':memory:')
+              conn = SQLite3::Database.new uri
+            else
+              conn = SQLite3::Database.new uri.path
+            end
+            conn.send(:initialize, uri)
+            at_exit { conn.real_close }
+          end
+
+          @reserved_connections << conn
         end
+
+        return conn
       end
 
       def self.close
@@ -83,3 +105,27 @@ module LazyMapper
     end
   end
 end # module LazyMapper
+class SQLite3::Database
+  def create_command(text)
+    concrete_command.new(self, text)
+  end
+
+  def real_close
+    self.close
+  end
+
+  private
+  def concrete_command
+    @concrete_command || begin
+
+      class << self
+        private
+        def concrete_command
+          @concrete_command
+        end
+      end
+
+      @concrete_command = LazyMapper::const_get('Sqlite3').const_get('Command')
+    end
+  end
+end

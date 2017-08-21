@@ -25,19 +25,21 @@ module LazyMapper
 
         identity_field = begin
           key = resource.class.key(name)
-          key.first if key.size == 1
+          key.first if key.size == 1 && key.first.serial?
         end
 
         statement = create_statement(resource.class, dirty_attributes, identity_field)
         bind_values = dirty_attributes.map { |p| resource.instance_variable_get(p.instance_variable_name) }
+
         result = execute(statement, *bind_values)
-        return false if result.size != 1
+
+        #return false if result.to_i != 1
 
         if identity_field
           resource.instance_variable_set(identity_field.instance_variable_name, result.insert_id)
         end
 
-        false
+        true
       end
 
       def read(repository, model, bind_values)
@@ -49,28 +51,22 @@ module LazyMapper
         set = Collection.new(repository, model, properties_with_indexes)
 
         statement = read_statement(model, properties, key)
-
+        puts bind_values
         with_connection do |connection|
-          command = connection.create_command(statement)
-          command.set_types(properties.map { |p| p.primitive })
-
-          begin
-            reader = command.execute_reader(*bind_values)
-            set.load(reader.values) if reader.next!
-            set.first
-          ensure
-            reader.close if reader
-          end
+          execute(statement, *bind_values).each { |row|
+            set << row
+          }
         end
       end
 
       def read_set(repository, query)
-       read_set_with_sql(repository,
+        result = read_set_with_sql(repository,
                          query.model,
                          query.fields,
                          query_read_statement(query),
                          query.parameters,
                          query.reload?)
+        result
       end
 
       def update(repository, resource)
@@ -100,8 +96,9 @@ module LazyMapper
       # Database-specific method
       def execute(statement, *args)
         with_connection do |connection|
+          command = connection.create_command(statement)
           LazyMapper.logger.info(statement)
-          connection.execute(statement, args)
+          command.execute_non_query(*args)
         end
       end
 
@@ -164,7 +161,7 @@ module LazyMapper
 
       def count(repository, property, query)
         parameters = query.parameters
-        execute(aggregate_value_statement(:count, property, query), *parameters).first
+        execute(aggregate_value_statement(:count, property, query), *parameters).affected_rows.first
       end
 
       def min(respository, property, query)
@@ -269,11 +266,9 @@ module LazyMapper
         properties_with_indexes = Hash[*properties.zip((0...properties.length).to_a).flatten]
         Collection.new(repository, model, properties_with_indexes) do |set|
           with_connection do |connection|
-            rows = []
             execute(sql, *parameters).each { |row|
-              rows << row
+              set << row
             }
-			      rows
           end
         end
       end
@@ -522,8 +517,6 @@ module LazyMapper
 
         # Adapters that support AUTO INCREMENT fields for CREATE TABLE
         # statements should overwrite this to return true
-        #
-        # TODO: move to dm-more/dm-migrations
         def supports_serial?
           false
         end

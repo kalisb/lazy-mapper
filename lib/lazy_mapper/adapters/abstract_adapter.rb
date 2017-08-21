@@ -79,6 +79,55 @@ module LazyMapper
       @connection, @text = connection, text
     end
   end
+  class Result
+    attr_accessor :insert_id, :affected_rows
+
+    def initialize(command, affected_rows, insert_id = nil)
+      @command, @affected_rows, @insert_id = command, affected_rows, insert_id
+    end
+
+    def to_i
+      @affected_rows
+    end
+  end
+  class Reader
+
+    def fields
+      @fields
+    end
+
+    def fields=(value)
+      @fields << value
+    end
+
+    def values
+      raise NotImplementedError.new
+    end
+
+    def close
+      raise NotImplementedError.new
+    end
+
+    # Moves the cursor forward.
+    def next!
+      raise NotImplementedError.new
+    end
+
+    def initialize
+      @fields = []
+    end
+  end
+  class Result
+    attr_accessor :insert_id, :affected_rows
+
+    def initialize(command, affected_rows, insert_id = nil)
+      @command, @affected_rows, @insert_id = command, affected_rows, insert_id
+    end
+
+    def to_i
+      @affected_rows
+    end
+  end
   class Connection
 
     def self.inherited(base)

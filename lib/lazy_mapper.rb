@@ -8,7 +8,7 @@ dir = Pathname(__FILE__).dirname.expand_path / 'lazy_mapper'
 
 require dir / 'associations'
 require dir / 'model'
-require dir / 'auto_migrations'
+require dir / 'tables'
 require dir / 'hook'
 require dir / 'identity_map'
 require dir / 'logger'

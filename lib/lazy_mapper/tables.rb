@@ -1,6 +1,6 @@
 module LazyMapper
-   module AutoMigrations
-     def auto_migrate!(repository_name = nil)
+   module Table
+     def create_table(repository_name = nil)
        repository_name ||= default_repository_name
        repository(repository_name) do |r|
          (relationships(r.name)||{}).each_value { |relationship| relationship.child_key }
@@ -9,18 +9,16 @@ module LazyMapper
        end
      end
 
-     def auto_upgrade!(repository_name = nil)
+     def update_table(repository_name = nil)
        repository_name ||= default_repository_name
        repository(repository_name) do |r|
          (relationships(r.name)||{}).each_value { |relationship| relationship.child_key }
          r.adapter.upgrade_model_storage(r, self)
        end
      end
-   end # module AutoMigrations
-
-
+   end # module table
 
    module ClassMethods
-     include AutoMigrations
+     include Table
   end # module ClassMethods
 end # module LazyMapper

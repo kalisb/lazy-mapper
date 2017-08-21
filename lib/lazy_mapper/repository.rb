@@ -34,6 +34,7 @@ module LazyMapper
     ##
     # retrieve a specific instance by key
     def get(model, key)
+      query = Query.new(self, model, options)
       identity_maps[model][key] || adapter.read(self, model, key)
     end
 
@@ -50,7 +51,7 @@ module LazyMapper
     end
 
     def count(model, property, options)
-      @adapter.count(self, property, scoped_query(model, options))
+      @adapter.count(self, property, scoped_query(model, options)).first
     end
 
     def min(model, property, options)
@@ -72,11 +73,7 @@ module LazyMapper
     ##
     # retrieve a collection of results of a query
     def all(model, options)
-      query = if current_scope = model.send(:current_scope)
-        current_scope.merge(options)
-      else
-        Query.new(self, model, options)
-      end
+      query = Query.new(self, model, options)
       adapter.read_set(self, query)
     end
 

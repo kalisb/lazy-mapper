@@ -1,8 +1,12 @@
 require 'pathname'
 require Pathname(__FILE__).dirname.expand_path.parent + 'lib/lazy_mapper'
 
-#LazyMapper.setup(:default,  'sqlite3::memory:')
-LazyMapper.setup(:default, 'postgres://postgres:test@localhost/testdb')
+# Да се поддържа работа с поне 2 релационни бази от данни по
+# ваш избор - например SQLite и PostgreSQL. Можете да използвате
+# gem-ове като sqlite3 за комуникация със съответната база от данни.
+# Нямате право да използвате наготово ORM библиотеки.
+LazyMapper.setup(:default,  'sqlite3:test.db')
+LazyMapper.setup(:default, 'postgres://postgres:test@localhost/postgres')
 @adapter = repository(:default).adapter
 
 # Възможност за логване на направените към базата
@@ -10,68 +14,81 @@ LazyMapper.setup(:default, 'postgres://postgres:test@localhost/testdb')
 # Дали да логва на стандартния изход или във файл.
 # Лог записи на различни нива - DEBUG, INFO, ERROR.
 # Минимално ниво на лог записите, които да се виждат в лога.
-LazyMapper::Logger.new(nil, :info)
+LazyMapper::Logger.new($stdout, :info)
 
 class Article < LazyMapper::Model
   include  LazyMapper::ClassMethods
-  property :title, String, :key => true
+  property :id, Integer, :serial => true
+  property :title, String
   property :body,  String
 end
 
 class Author < LazyMapper::Model
+  property :id, Integer, :serial => true
   property :name, String, :key => true
-  #has n, :articles
+  has n, :articles
 end
 
 # Искаме да можем да свържем произволен написан от нас клас
 # с таблица в база от данни, съдържаща колони за атрибутите
 # на класа. Всеки такъв клас се нарича модел.
-Article.auto_migrate!(:default)
-Author.auto_migrate!(:default)
+puts '-----------------------------------------------------'
+Article.create_table(:default)
+Author.create_table(:default)
 puts "Created table article: " + @adapter.storage_exists?("articles").to_s
 puts "Created table author: " + @adapter.storage_exists?("authors").to_s
-
-# Да се поддържа работа с поне 2 релационни бази от данни по
-# ваш избор - например SQLite и PostgreSQL. Можете да използвате
-# gem-ове като sqlite3 за комуникация със съответната база от данни.
-# Нямате право да използвате наготово ORM библиотеки.
-
-#LazyMapper.setup(:default, 'postgres://postgres:test@localhost/testdb')
+puts '-----------------------------------------------------'
 
 # Създаване, четене, изтриване и ъпдейт (CRUD)
-article = Article.new(:title => 'Firsrt Article', :body => 'Article text')
-article.save()
-puts article.title
-puts article.body
-puts Article.all
+puts '-----------------------------------------------------'
+article = Article.new(:title => 'First Article', :body => 'Article text')
+puts 'Articles count: ' + Article.count().to_s
+article.create
+puts 'Articles count: ' + Article.count().to_s
+puts "Article Id: #{article.id}"
+puts 'Article title: ' + article.title
+puts 'Article body: ' + article.body
 article.title = "Second Article"
-article.save()
-puts Article.all
+article.update
+puts "Article Id: #{article.id}"
+puts 'Updated title: ' + article.title
 article.destroy
-puts Article.all
+puts 'Articles count: ' + Article.count().to_s
+puts '-----------------------------------------------------'
 
 # Сортиране по произволни атрибути и в произволна посока (ascending/descending)
+puts '-----------------------------------------------------'
 5.times do |time|
     Article.create(:title => 'Firsrt Article'  + time.to_s, :body => 'Article text')
 end
-puts Article.all
-puts Article.all(:order => [ :title.desc ])
+Article.order([ :title.desc, :body.asc ]).each {|result| puts result}
+puts '-----------------------------------------------------'
 
 # Филтриране по стойностите на един или повече атрибути (включително с неравенства)
-puts Article.all(:body => 'Article text')
+puts '-----------------------------------------------------'
+Article.where(:body => 'Article text')
+puts '-----------------------------------------------------'
 
 # Лимитиране на брой върнати резултати при заявка
-puts Article.all(:limit => 2)
+puts '-----------------------------------------------------'
+Article.limit(2)
+puts '-----------------------------------------------------'
 
 # Пропускане на определен брой записи от заявка
-puts Article.all(:limit => 2, :offset => 3)
+puts '-----------------------------------------------------'
+Article.limit(2).offset(3)
+puts '-----------------------------------------------------'
 
 # Горните могат да се комбиринат и chain-ват
 # (например, User.where(first_name: 'a').where(last_name: 'b').order(first_name: :desc))
-puts Article.all(:order => [ :title.desc ], :limit => 2)
+puts '-----------------------------------------------------'
+Article.where(:body => 'Article text').limit(2).order([ :title.desc ])
+puts '-----------------------------------------------------'
 
 # Да се поддържат прости агрегации като count и avg
-puts Article.count(:body => 'Article text')
+puts '-----------------------------------------------------'
+Article.count(:body => 'Article text')
+puts '-----------------------------------------------------'
 
 # В доста от случаите моделите са свързани по някакъв начин.
 # Например, един потребител може да има много коментари. Имплементирайте
@@ -79,7 +96,9 @@ puts Article.count(:body => 'Article text')
 # Това означава че очакваме да можем да "свържем" две инстанции на модели в Ruby кода
 # (например, user.comments = [Comment.new(...)]) и това да се отрази
 # в базата от данни след като запишем инстанцията.
-author = Author.new(:name => 'John Doe')
-author.save()
-author.articles << article
-puts author.articles[0].title
+puts '-----------------------------------------------------'
+ author = Author.new(:name => 'John Doe')
+ author.save()
+ author.articles << article
+ puts author.articles[0].title
+puts '-----------------------------------------------------'

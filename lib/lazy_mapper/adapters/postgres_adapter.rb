@@ -83,25 +83,73 @@ module LazyMapper
     end
   end
   module Postgres
-    class Connection
+    class Command < LazyMapper::Command
+      def execute_non_query(*args)
+        result = @connection.exec @text, *args
+        result
+      end
+    end
+    class Connection < LazyMapper::Connection
       def self.acquire(uri)
-        path = uri.path.delete '/'
-        @connection = PG.connect :dbname => path, :user => uri.user, :password => uri.password
+        conn = nil
+        @connection_lock.synchronize do
+          unless @available_connections[uri].empty?
+            conn = @available_connections[uri].pop
+          else
+            path = uri.path.delete '/'
+            conn = PG.connect :dbname => path, :user => uri.user, :password => uri.password
+            conn.send(:initialize, uri)
+            at_exit { conn.real_close }
+          end
+
+          @reserved_connections << conn
+        end
+
+        return conn
+      end
+    end
+  end
+
+  class PG::Connection
+    def real_close
+      self.close
+    end
+
+    def create_command(text)
+      concrete_command.new(self, text)
+    end
+
+    private
+    def concrete_command
+      @concrete_command || begin
+
+        class << self
+          private
+          def concrete_command
+            @concrete_command
+          end
+        end
+
+        @concrete_command = LazyMapper::const_get('Postgres').const_get('Command')
       end
     end
   end
 
   class PG::Result
-	def size()
-		result_status
-	end
+  	def size()
+  		result_status
+  	end
 
-	def insert_id()
-		oid_value
-	end
+  	def insert_id()
+  		oid_value
+  	end
 
-	def to_i()
-		self.to_a.size
-	end
+    def affected_rows
+      self.to_a
+    end
+
+  	def to_i()
+  		self.to_a.size
+  	end
   end
 end

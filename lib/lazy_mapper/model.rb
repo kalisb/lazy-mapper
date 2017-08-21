@@ -76,8 +76,8 @@ module LazyMapper
     ##
     #
     # @see Repository#get
-    def get(*key)
-      repository.get(self, key)
+    def where(options = {})
+      repository.get(self, options)
     end
 
     ##
@@ -97,6 +97,11 @@ module LazyMapper
       else
         repository.all(self, options)
       end
+    end
+
+    def order(options = {})
+      options_map = {:order => options}
+      repository.all(self, options_map)
     end
 
     ##
@@ -144,18 +149,6 @@ module LazyMapper
        repository.sum(self, property, options)
      end
   end
-
-    ##
-    # Dangerous version of #create.  Raises if there is a failure
-    #
-    # @see LazyMapper::Resource#create
-    # @param <Hash(Symbol => Object)> attributes hash of attributes to set
-    # @raise <PersistenceError> The resource could not be saved
-    def create!(attributes = {})
-      resource = create(attributes)
-      raise PersistenceError, "Resource not saved: :new_record => #{resource.new_record?}, :dirty_attributes => #{resource.dirty_attributes.inspect}" if resource.new_record?
-      resource
-    end
 
     # TODO SPEC
     def copy(source, destination, options = {})
@@ -223,7 +216,8 @@ module LazyMapper
     # Create an instance of Model with the given attributes
     ##
     def self.create(attributes = {})
-      resource = allocate
+      resource = allocate()
+      raise PersistenceError, "Model not saved: :new_record => #{resource.new_record?}, :dirty_attributes => #{resource.dirty_attributes.inspect}" if resource.new_record?
       resource.send(:initialize_with_attributes, attributes)
       resource.save
       resource
@@ -455,8 +449,6 @@ module LazyMapper
       save
     end
 
-    private
-
     def create
       repository.save(self)
     end
@@ -464,6 +456,8 @@ module LazyMapper
     def update
       repository.save(self)
     end
+
+    private
 
     def initialize(*args) # :nodoc:
       validate_resource
