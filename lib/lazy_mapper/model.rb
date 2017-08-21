@@ -89,6 +89,18 @@ module LazyMapper
     end
 
     ##
+    # Create an instance of Model with the given attributes
+    ##
+    def create(attributes = {})
+        resource = self.new
+        attributes.each do |key, value|
+            resource.send(:instance_variable_set, "@#{key}", value)
+        end
+        resource.save
+        resource
+    end
+
+    ##
     #
     # @see Repository#all
     def all(options = {})
@@ -213,23 +225,12 @@ module LazyMapper
     end
 
     ##
-    # Create an instance of Model with the given attributes
-    ##
-    def self.create(attributes = {})
-      resource = allocate()
-      raise PersistenceError, "Model not saved: :new_record => #{resource.new_record?}, :dirty_attributes => #{resource.dirty_attributes.inspect}" if resource.new_record?
-      resource.send(:initialize_with_attributes, attributes)
-      resource.save
-      resource
-    end
-
-    ##
     # Return all classes that include the LazyMapper::Resource module
     #
     # @return <Set> a set containing the including classes
     # -
     # @api semipublic
-    def self.descendents
+    def descendents
       @@descendents
     end
 

@@ -102,27 +102,6 @@ module LazyMapper
         end
       end
 
-      def query(statement, *args)
-        with_reader(statement, args) do |reader|
-          results = []
-
-          if (fields = reader.fields).size > 1
-            fields = fields.map { |field| field.downcase.to_sym }
-            struct = Struct.new(*fields)
-
-            while(reader.next!) do
-              results << struct.new(*reader.values)
-            end
-          else
-            while(reader.next!) do
-              results << reader.values.at(0)
-            end
-          end
-
-          results
-        end
-      end
-
       def upgrade_model_storage(repository, model)
         table_name = model.storage_name(name)
 
@@ -560,8 +539,9 @@ module LazyMapper
         def property_schema_hash(property, model)
           schema = self.class.type_map[property.type].merge(:name => property.field(name))
           if property.type == String
-            schema[:size] = 30
+            schema[:size] = property.length
           end
+          schema[:serial?] = property.serial?
           schema
         end
 
@@ -569,9 +549,8 @@ module LazyMapper
           statement = quote_column_name(schema[:name])
           statement << " #{schema[:primitive]}"
 
-          if schema[:size]
-              statement << "(#{quote_column_value(schema[:size])})"
-          end
+          statement << "(#{quote_column_value(schema[:size])})" if schema[:size]
+        #  statement << ' AUTO_INCREMENT' if schema[:serial?]
 
           statement
         end

@@ -17,7 +17,6 @@ LazyMapper.setup(:default, 'postgres://postgres:test@localhost/postgres')
 LazyMapper::Logger.new($stdout, :info)
 
 class Article < LazyMapper::Model
-  include  LazyMapper::ClassMethods
   property :id, Integer, :serial => true
   property :title, String
   property :body,  String
@@ -25,7 +24,7 @@ end
 
 class Author < LazyMapper::Model
   property :id, Integer, :serial => true
-  property :name, String, :key => true
+  property :name, String
   has n, :articles
 end
 
@@ -33,8 +32,8 @@ end
 # с таблица в база от данни, съдържаща колони за атрибутите
 # на класа. Всеки такъв клас се нарича модел.
 puts '-----------------------------------------------------'
-Article.create_table(:default)
 Author.create_table(:default)
+Article.create_table(:default)
 puts "Created table article: " + @adapter.storage_exists?("articles").to_s
 puts "Created table author: " + @adapter.storage_exists?("authors").to_s
 puts '-----------------------------------------------------'
@@ -43,15 +42,16 @@ puts '-----------------------------------------------------'
 puts '-----------------------------------------------------'
 article = Article.new(:title => 'First Article', :body => 'Article text')
 puts 'Articles count: ' + Article.count().to_s
-article.create
+article.save
 puts 'Articles count: ' + Article.count().to_s
 puts "Article Id: #{article.id}"
-puts 'Article title: ' + article.title
-puts 'Article body: ' + article.body
+#puts 'Article title: ' + article.title
+#puts 'Article body: ' + article.body
 article.title = "Second Article"
 article.update
-puts "Article Id: #{article.id}"
-puts 'Updated title: ' + article.title
+#puts "Article Id: #{article.id}"
+#puts 'Updated title: ' + article.title
+puts 'Articles count: ' + Article.count().to_s
 article.destroy
 puts 'Articles count: ' + Article.count().to_s
 puts '-----------------------------------------------------'

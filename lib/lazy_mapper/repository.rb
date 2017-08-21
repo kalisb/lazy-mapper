@@ -28,7 +28,7 @@ module LazyMapper
     end
 
     def identity_map(model)
-      @identity_maps[model]
+     @identity_maps[model.class] ||= IdentityMap.new
     end
 
     ##
@@ -51,7 +51,7 @@ module LazyMapper
     end
 
     def count(model, property, options)
-      @adapter.count(self, property, scoped_query(model, options)).first
+      @adapter.count(self, property, scoped_query(model, options))
     end
 
     def min(model, property, options)
@@ -95,7 +95,7 @@ module LazyMapper
       success = false
 
       # save the resource if is dirty, or is a new record with a serial key
-      if resource.dirty? || resource.new_record?
+      if resource.dirty? || (resource.new_record? && model.key.any? { |p| p.serial? })
         if resource.new_record?
           if adapter.create(self, resource)
             identity_map_set(resource)
@@ -166,12 +166,9 @@ module LazyMapper
     attr_reader :identity_maps
 
     def initialize(name)
-      raise ArgumentError, "+name+ should be a Symbol, but was #{name.class}", caller unless Symbol === name
-      raise ArgumentError, "Unknown adapter name: #{name}"                            unless self.class.adapters.has_key?(name)
-
       @name          = name
       @adapter       = self.class.adapters[name]
-      @identity_maps = Hash.new { |h,model| h[model] = IdentityMap.new }
+      @identity_maps = {}
     end
 
     def scoped_query(model, options)
