@@ -226,18 +226,10 @@ module LazyMapper
       normalize_order
       normalize_fields
 
-      # XXX: should I validate that each property in @order corresponds
-      # to something in @fields?  Many DB engines require they match,
-      # and I can think of no valid queries where a field would be so
-      # important that you sort on it, but not important enough to
-      # return.
-
       # normalize links and includes.
-      # NOTE: this must be done after order and fields
       normalize_links
       normalize_includes
 
-      translate_custom_types(@properties, options)
 
       # treat all non-options as conditions
       (options.keys - OPTIONS - OPTIONS.map(&:to_s)).each do |k|
@@ -253,15 +245,6 @@ module LazyMapper
           else
             [ :raw, raw_query, bind_values ]
           end
-        end
-      end
-    end
-
-    def translate_custom_types(properties, options)
-      options.each do |key, value|
-        case key
-        when LazyMapper::Query::Operator
-          options[key] = properties[key.target].type.dump(value, properties[key.target]) if !properties[key.target].nil? && properties[key.target].custom?
         end
       end
     end

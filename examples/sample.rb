@@ -59,14 +59,14 @@ puts '-----------------------------------------------------'
 # Сортиране по произволни атрибути и в произволна посока (ascending/descending)
 puts '-----------------------------------------------------'
 5.times do |time|
-    Article.create(:title => 'Firsrt Article'  + time.to_s, :body => 'Article text')
+    Article.new(:title => 'Firsrt Article'  + time.to_s, :body => 'Article text').save
 end
 Article.order([ :title.desc, :body.asc ]).each {|result| puts result}
 puts '-----------------------------------------------------'
 
 # Филтриране по стойностите на един или повече атрибути (включително с неравенства)
 puts '-----------------------------------------------------'
-Article.where(:body => 'Article text')
+Article.where(:body.eql => 'Article text')#.each {|result| puts result}
 puts '-----------------------------------------------------'
 
 # Лимитиране на брой върнати резултати при заявка
@@ -100,5 +100,5 @@ puts '-----------------------------------------------------'
  author = Author.new(:name => 'John Doe')
  author.save()
  author.articles << article
- puts author.articles[0].title
+ #puts author.articles[0].title
 puts '-----------------------------------------------------'

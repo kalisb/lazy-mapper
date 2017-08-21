@@ -78,6 +78,7 @@ module LazyMapper
     # @see Repository#get
     def where(options = {})
       repository.get(self, options)
+      self
     end
 
     ##
@@ -132,6 +133,18 @@ module LazyMapper
       with_repository_and_property(*args) do |repository,property,options|
          repository.count(self, property, options)
       end
+    end
+
+    def limit(options = {})
+      options_map = {:limit => options}
+      repository.all(self, options_map)
+      self
+    end
+
+    def offset(options = {})
+      options_map = {:limit => options}
+      repository.all(self, options_map)
+      self
     end
 
     def min(*args)

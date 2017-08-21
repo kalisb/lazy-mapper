@@ -33,9 +33,9 @@ module LazyMapper
 
     ##
     # retrieve a specific instance by key
-    def get(model, key)
+    def get(model, options)
       query = Query.new(self, model, options)
-      identity_maps[model][key] || adapter.read(self, model, key)
+      adapter.read_set(self, query)
     end
 
     ##
