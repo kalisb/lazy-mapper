@@ -10,7 +10,7 @@ describe "LazyMapper::Model" do
 
       storage_names[:legacy] = "dying_planets"
 
-      property :id, Integer, :key => true
+      property :id, Integer, key: true
       property :age, Integer
       property :core, String
     end
@@ -23,7 +23,7 @@ describe "LazyMapper::Model" do
 
     class Phone < LazyMapper::Model
 
-      property :name, String, :key => true
+      property :name, String, key: true
       property :awesomeness, Integer
     end
   end
@@ -35,7 +35,7 @@ describe "LazyMapper::Model" do
   end
 
   it "should return an instance of the created object" do
-     expect(Planet.create!(:name => 'Venus', :age => 1_000_000, :core => nil, :id => 42)).to be_a_kind_of(Planet)
+     expect(Planet.create!(name: 'Venus', age: 1_000_000, core: nil, id: 42)).to be_a_kind_of(Planet)
   end
 
   it 'should provide persistance methods' do

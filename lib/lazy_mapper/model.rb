@@ -77,8 +77,8 @@ module LazyMapper
     #
     # @see Repository#get
     def where(options = {})
-      repository.get(self, options)
-      self
+      releation = LazyMapper::Relation.new(repository, self, options)
+      releation
     end
 
     ##
@@ -113,7 +113,7 @@ module LazyMapper
     end
 
     def order(options = {})
-      options_map = {:order => options}
+      options_map = {order: options}
       repository.all(self, options_map)
     end
 
@@ -136,15 +136,15 @@ module LazyMapper
     end
 
     def limit(options = {})
-      options_map = {:limit => options}
-      repository.all(self, options_map)
-      self
+      options_map = {limit: options}
+      releation = LazyMapper::Relation.new(repository, self, options_map)
+      releation
     end
 
     def offset(options = {})
-      options_map = {:limit => options}
-      repository.all(self, options_map)
-      self
+      options_map = {offset: options}
+      releation = LazyMapper::Relation.new(repository, self, options_map)
+      releation
     end
 
     def min(*args)
@@ -410,14 +410,14 @@ module LazyMapper
     end
 
     def reload
-      @collection.reload(:fields => loaded_attributes)
+      @collection.reload(fields: loaded_attributes)
       (parent_associations + child_associations).each { |association| association.reload! }
       self
     end
     alias reload! reload
 
     def reload_attributes(*attributes)
-      @collection.reload(:fields => attributes)
+      @collection.reload(fields: attributes)
       self
     end
 
@@ -494,7 +494,7 @@ module LazyMapper
 
     def lazy_load(name)
       return unless @collection
-      @collection.reload(:fields => self.class.properties(repository.name).lazy_load_context(name))
+      @collection.reload(fields: self.class.properties(repository.name).lazy_load_context(name))
     end
 
     def private_attributes

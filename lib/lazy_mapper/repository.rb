@@ -42,9 +42,9 @@ module LazyMapper
     # retrieve a singular instance by query
     def first(model, options)
       query = if current_scope = model.send(:current_scope)
-        current_scope.merge(options.merge(:limit => 1))
+        current_scope.merge(options.merge(limit: 1))
       else
-        Query.new(self, model, options.merge(:limit => 1))
+        Query.new(self, model, options.merge(limit: 1))
       end
 
       adapter.read_set(self, query).first

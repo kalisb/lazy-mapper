@@ -14,13 +14,13 @@ module LazyMapper
         relationship =
           relationships(repository.name)[name] =
           if options.include?(:through)
-            RelationshipChain.new(:child_model_name => options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
-                                  :parent_model_name => self.name,
-                                  :repository_name => repository.name,
-                                  :near_relationship_name => options[:through],
-                                  :remote_relationship_name => options.fetch(:remote_name, name),
-                                  :parent_key => options[:parent_key],
-                                  :child_key => options[:child_key])
+            RelationshipChain.new(child_model_name: options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
+                                  parent_model_name: self.name,
+                                  repository_name: repository.name,
+                                  near_relationship_name: options[:through],
+                                  remote_relationship_name: options.fetch(:remote_name, name),
+                                  parent_key: options[:parent_key],
+                                  child_key: options[:child_key])
           else
             relationships(repository.name)[name] =
               Relationship.new(
@@ -188,12 +188,12 @@ module LazyMapper
 
         def save_resources(resources = [])
           ensure_mutable
-          repository(@relationship.repository_name) do
+        #  repository(@relationship.repository_name) do
             resources.each do |resource|
               @relationship.attach_parent(resource, @parent_resource)
               resource.save
             end
-          end
+        #  end
         end
 
         def method_missing(method, *args, &block)

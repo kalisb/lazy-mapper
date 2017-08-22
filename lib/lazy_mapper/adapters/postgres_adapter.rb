@@ -152,7 +152,7 @@ module LazyMapper
             conn = @available_connections[uri].pop
           else
             path = uri.path.delete '/'
-            conn = PG.connect :dbname => path, :user => uri.user, :password => uri.password
+            conn = PG.connect dbname: path, user: uri.user, password: uri.password
             conn.send(:initialize, uri)
             at_exit { conn.real_close }
           end
@@ -167,7 +167,7 @@ module LazyMapper
 
   class PG::Connection
     def real_close
-      self.close
+      self.finish unless self.finished?
     end
 
     def create_command(text)

@@ -4,9 +4,9 @@ module LazyMapper
     attr_reader :repository
 
     def reload(options = {})
-      query = Query.new(@repository, @model, keys.merge(:fields => @key_properties))
-      query.update(options.merge(:reload => true))
-      replace(@repository.adapter.read_set(@repository, query))
+      query = Query.new(@repository, @model, keys.merge(fields: @key_properties))
+      query.update(options.merge(reload: true))
+      @repository.adapter.read_set(@repository, query)
     end
 
     def load(values, reload = false)

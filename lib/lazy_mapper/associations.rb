@@ -50,25 +50,25 @@ module LazyMapper
     def extract_throughness(name)
       case name
       when Hash
-        {:name => name.values.first, :through => name.keys.first}
+        {name: name.values.first, through: name.keys.first}
       when Symbol
-        {:name => name}
+        {name: name}
       else
         raise ArgumentError, "Name of association must be Hash or Symbol, not #{name.inspect}"
       end
     end
 
     # A support method form converting Fixnum, Range or Infinity values into a
-    # {:min=>x, :max=>y} hash.
+    # {min:x, max:y} hash.
     #
     # @api private
     def extract_min_max(constraints)
       case constraints
         when Range
           raise ArgumentError, "Constraint min (#{constraints.first}) cannot be larger than the max (#{constraints.last})" if constraints.first > constraints.last
-          { :min => constraints.first, :max => constraints.last }
+          { min: constraints.first, max: constraints.last }
         when Integer
-          { :min => constraints, :max => constraints }
+          { min: constraints, max: constraints }
         when n
           {}
         else
@@ -77,7 +77,7 @@ module LazyMapper
     end
   end # module Associations
 
-  class Model
-    extend LazyMapper::Associations
+  module LazyMapper::ClassMethods
+    include LazyMapper::Associations
   end # module ClassMethods
 end # module LazyMapper

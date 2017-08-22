@@ -10,7 +10,7 @@ if HAS_SQLITE3
       before :all do
         class Sputnik < LazyMapper::Model
 
-          property :id, Integer, :key => true
+          property :id, Integer, key: true
           property :name, String
         end
       end
@@ -30,7 +30,7 @@ if HAS_SQLITE3
       before :all do
         class Sputnik < LazyMapper::Model
 
-          property :id, Integer, :key => true
+          property :id, Integer, key: true
           property :name, String
         end
       end

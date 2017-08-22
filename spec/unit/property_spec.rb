@@ -27,7 +27,7 @@ describe LazyMapper::Property do
   end
 
   it "should determine whether it is a key" do
-    expect(LazyMapper::Property.new(Tomato,:id,Integer,{:key => true}).key?).to be true
+    expect(LazyMapper::Property.new(Tomato,:id,Integer,{key: true}).key?).to be true
     expect(LazyMapper::Property.new(Tomato,:botanical_name,String,{}).key?).to be false
   end
 
@@ -37,7 +37,7 @@ describe LazyMapper::Property do
 
   it "should append ? to TrueClass property reader methods" do
     class Potato < LazyMapper::Model
-      property :id, Integer, :key => true
+      property :id, Integer, key: true
       property :fresh, TrueClass
       property :public, TrueClass
     end
@@ -45,7 +45,7 @@ describe LazyMapper::Property do
     expect(Potato.new()).to respond_to(:fresh)
     expect(Potato.new()).to respond_to(:fresh?)
 
-    expect(Potato.new(:fresh => true)).to be_fresh
+    expect(Potato.new(fresh: true)).to be_fresh
 
     expect(Potato.new()).to respond_to(:public)
     expect(Potato.new()).to respond_to(:public?)
@@ -53,17 +53,17 @@ describe LazyMapper::Property do
 
   it "should raise an ArgumentError when created with an invalid option" do
     expect {
-      LazyMapper::Property.new(Tomato,:botanical_name,String,{:foo=>:bar})
+      LazyMapper::Property.new(Tomato,:botanical_name,String,{foo::bar})
     }.to raise_error(ArgumentError)
   end
 
   it 'should return the attribute value from a given instance' do
     class Tomato
       include LazyMapper::Resource
-      property :id, Integer, :key => true
+      property :id, Integer, key: true
     end
 
-    tomato = Tomato.new(:id => 1)
+    tomato = Tomato.new(id: 1)
     expect(tomato.class.properties(:default)[:id].get(tomato)).to eq 1
   end
 

@@ -42,7 +42,7 @@ module LazyMapper
     alias [] lookup
 
     def type_mapped?(type)
-      @chains.has_key?(type) || (@parent.nil? ? false : @parent.type_mapped?(type))
+      @chains.key?(type) || (@parent.nil? ? false : @parent.type_mapped?(type))
     end
 
     class TypeChain
@@ -64,8 +64,8 @@ module LazyMapper
       end
 
       def translate
-        @attributes.merge((@primitive.nil? ? {} : {:primitive => @primitive}))
+        @attributes.merge((@primitive.nil? ? {} : {primitive: @primitive}))
       end
     end
-  end # class TypeMap
-end # module LazyMapper
+  end
+end

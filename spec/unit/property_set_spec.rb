@@ -4,8 +4,8 @@ class Icon < LazyMapper::Model
 
       property :id, Integer
       property :name, String
-      property :width, Integer, :lazy => true
-      property :height, Integer, :lazy => true
+      property :width, Integer, lazy: true
+      property :height, Integer, lazy: true
 end
 
 describe LazyMapper::PropertySet do

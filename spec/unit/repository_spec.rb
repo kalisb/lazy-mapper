@@ -2,19 +2,19 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 class Vegetable < LazyMapper::Model
 
-  property :id, Integer, :key => true
+  property :id, Integer, key: true
   property :name, String
 end
 
 class Fruit < LazyMapper::Model
 
-  property :id, Integer, :key => true
+  property :id, Integer, key: true
   property :name, String
 end
 
 class Grain < LazyMapper::Model
 
-  property :id, Integer, :key => true
+  property :id, Integer, key: true
   property :name, String
 end
 
@@ -49,7 +49,7 @@ describe LazyMapper::Repository do
   describe '#save' do
     describe 'with a new resource' do
       it 'should create when dirty' do
-        resource = Vegetable.new({:id => 1, :name => 'Potato'})
+        resource = Vegetable.new({id: 1, name: 'Potato'})
 
         expect(resource).to be_dirty
         expect(resource).to be_new_record
@@ -73,7 +73,7 @@ describe LazyMapper::Repository do
 
     describe 'with an existing resource' do
       it 'should update when dirty' do
-        resource = Vegetable.new(:name => 'Potato')
+        resource = Vegetable.new(name: 'Potato')
         resource.instance_variable_set('@new_record', false)
 
         expect(resource).to be_dirty

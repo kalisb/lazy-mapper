@@ -14,11 +14,11 @@ module LazyMapper
     #   LazyMapper::Logger::LEVELS[:fatal, :error, :warn, :info, :debug]
     LEVELS =
     {
-      :fatal => 7,
-      :error => 6,
-      :warn  => 4,
-      :info  => 3,
-      :debug => 0
+      fatal: 7,
+      error: 6,
+      warn: 4,
+      info: 3,
+      debug: 0
     }
 
     private

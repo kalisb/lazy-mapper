@@ -58,17 +58,17 @@ describe "LazyMapper::Associations" do
 
     it "should not allow overwriting of the auto assigned min/max values with keys" do
       allow(Manufacturer).to receive(:one_to_many).
-        with(:vehicles, {:min=>1, :max=>2}).
+        with(:vehicles, {min:1, max:2}).
         and_return(@relationship)
       class Manufacturer
-        has 1..2, :vehicles, :min=>5, :max=>10
+        has 1..2, :vehicles, min:5, max:10
       end
     end
 
     describe "one-to-one syntax" do
       it "should create a basic one-to-one association with fixed constraint" do
         allow(Manufacturer).to receive(:one_to_one).
-          with(:halo_car, { :min => 1, :max => 1 }).
+          with(:halo_car, { min: 1, max: 1 }).
           and_return(@relationship)
         class Manufacturer
           has 1, :halo_car
@@ -77,7 +77,7 @@ describe "LazyMapper::Associations" do
 
       it "should create a basic one-to-one association with min/max constraints" do
         allow(Manufacturer).to receive(:one_to_one).
-          with(:halo_car, { :min => 0, :max => 1 }).
+          with(:halo_car, { min: 0, max: 1 }).
           and_return(@relationship)
         class Manufacturer
           has 0..1, :halo_car
@@ -86,11 +86,11 @@ describe "LazyMapper::Associations" do
 
       it "should create a one-to-one association with options" do
         allow(Manufacturer).to receive(:one_to_one).
-          with(:halo_car, {:class_name => 'Car', :min => 1, :max => 1 }).
+          with(:halo_car, {class_name: 'Car', min: 1, max: 1 }).
           and_return(@relationship)
         class Manufacturer
           has 1, :halo_car,
-            :class_name => 'Car'
+            class_name: 'Car'
         end
       end
     end
@@ -107,7 +107,7 @@ describe "LazyMapper::Associations" do
 
       it "should create a one-to-many association with fixed constraint" do
         allow(Manufacturer).to receive(:one_to_many).
-          with(:vehicles,{:min=>4, :max=>4}).
+          with(:vehicles,{min:4, max:4}).
           and_return(@relationship)
         class Manufacturer
           has 4, :vehicles
@@ -116,7 +116,7 @@ describe "LazyMapper::Associations" do
 
       it "should create a one-to-many association with min/max constraints" do
         allow(Manufacturer).to receive(:one_to_many).
-          with(:vehicles,{:min=>2, :max=>4}).
+          with(:vehicles,{min:2, max:4}).
           and_return(@relationship)
         class Manufacturer
           has 2..4, :vehicles
@@ -125,11 +125,11 @@ describe "LazyMapper::Associations" do
 
       it "should create a one-to-many association with options" do
         allow(Manufacturer).to receive(:one_to_many).
-          with(:vehicles,{:min=>1, :max=>@n, :class_name => 'Car'}).
+          with(:vehicles,{min:1, max:@n, class_name: 'Car'}).
           and_return(@relationship)
         class Manufacturer
           has 1..n, :vehicles,
-            :class_name => 'Car'
+            class_name: 'Car'
         end
       end
 
@@ -137,7 +137,7 @@ describe "LazyMapper::Associations" do
       it "should raise an exception when n..n is used for the cardinality" do
         expect do
           class Manufacturer
-            has n..n, :subsidiaries, :class_name => 'Manufacturer'
+            has n..n, :subsidiaries, class_name: 'Manufacturer'
           end
         end.to raise_error(ArgumentError)
       end

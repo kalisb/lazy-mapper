@@ -3,7 +3,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 describe "LazyMapper::IdentityMap" do
   before(:all) do
     class Cow < LazyMapper::Model
-      property :id, Integer, :key => true
+      property :id, Integer, key: true
       property :name, String
     end
 
@@ -12,8 +12,8 @@ describe "LazyMapper::IdentityMap" do
     end
 
     class Pig < LazyMapper::Model
-      property :id, Integer, :key => true
-      property :composite, Integer, :key => true
+      property :id, Integer, key: true
+      property :composite, Integer, key: true
       property :name, String
     end
   end
@@ -24,22 +24,22 @@ describe "LazyMapper::IdentityMap" do
   end
 
   it "should return an instance on #get when it finds the requested instance" do
-    betsy = Cow.new({:id=>23,:name=>'Betsy'})
+    betsy = Cow.new({id:23,name:'Betsy'})
     map = LazyMapper::IdentityMap.new
     map.set(betsy.key, betsy)
     expect(map.get([23])).to eq betsy
   end
 
   it "should store an instance on #set" do
-    betsy = Cow.new({:id=>23,:name=>'Betsy'})
+    betsy = Cow.new({id:23,name:'Betsy'})
     map = LazyMapper::IdentityMap.new
     map.set(betsy.key, betsy)
     expect(map.get([23])).to eq betsy
   end
 
   it "should store instances with composite keys on #set" do
-    pig = Pig.new({:id=>1,:composite=>1,:name=> 'Pig'})
-    piggy = Pig.new({:id=>1,:composite=>2,:name=>'Piggy'})
+    pig = Pig.new({id:1,composite:1,name: 'Pig'})
+    piggy = Pig.new({id:1,composite:2,name:'Piggy'})
 
     map = LazyMapper::IdentityMap.new
     map.set(pig.key, pig)
@@ -50,7 +50,7 @@ describe "LazyMapper::IdentityMap" do
   end
 
   it "should remove an instance on #delete" do
-    betsy = Cow.new({:id=>23,:name=>'Betsy'})
+    betsy = Cow.new({id:23,name:'Betsy'})
     map = LazyMapper::IdentityMap.new
     map.set(betsy.key, betsy)
     map.delete([23])
@@ -87,7 +87,7 @@ describe "Second Level Caching" do
 
   it 'should be set when the first level cache entry is set' do
     cache = @mock_class.new
-    betsy = Cow.new(:id => 23, :name => 'Betsy')
+    betsy = Cow.new(id: 23, name: 'Betsy')
 
     allow(cache).to receive(:set).with(betsy.key, betsy).and_return(betsy)
 
@@ -97,7 +97,7 @@ describe "Second Level Caching" do
 
   it 'should be deleted when the first level cache entry is deleted' do
     cache = @mock_class.new
-    betsy = Cow.new(:id => 23, :name => 'Betsy')
+    betsy = Cow.new(id: 23, name: 'Betsy')
 
     allow(cache).to receive(:set)
     allow(cache).to receive(:delete).with(betsy.key).and_return(betsy)
