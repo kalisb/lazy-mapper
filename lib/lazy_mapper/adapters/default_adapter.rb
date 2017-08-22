@@ -245,7 +245,7 @@ module LazyMapper
         properties_with_indexes = Hash[*properties.zip((0...properties.length).to_a).flatten]
         Collection.new(repository, model, properties_with_indexes) do |set|
           with_connection do |connection|
-            execute(sql, *parameters).each { |row|
+            execute(sql, *parameters).affected_rows.each { |row|
               set << row
             }
           end

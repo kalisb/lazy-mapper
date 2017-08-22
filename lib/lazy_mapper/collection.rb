@@ -11,10 +11,10 @@ module LazyMapper
 
     def load(values, reload = false)
       model = if @inheritance_property_index
-        values.at(@inheritance_property_index) || @model
-      else
-        @model
-      end
+                values.at(@inheritance_property_index) || @model
+              else
+                @model
+              end
 
       resource = nil
 
@@ -34,7 +34,7 @@ module LazyMapper
           end
           self << resource
           resource.collection = self
-          @key_properties.zip(key_values).each do |property,key_value|
+          @key_properties.zip(key_values).each do |property, key_value|
             resource.instance_variable_set(property.instance_variable_name, key_value)
           end
           resource.instance_variable_set(:@new_record, false)
@@ -78,7 +78,7 @@ module LazyMapper
 
     def method_missing(method_name, *args)
       if @model.relationships(@repository.name)[method_name]
-        map{ |e| e.send(method_name) }.flatten.compact
+        map { |e| e.send(method_name) }.flatten.compact
       else
         super
       end
@@ -90,7 +90,7 @@ module LazyMapper
     #   pairs.
     #   { Property<:id> => 1, Property<:name> => 2, Property<:notes> => 3 }
     def initialize(repository, model, properties_with_indexes, &loader)
-      raise ArgumentError, "+repository+ must be a LazyMapper::Repository, but was #{repository.class}", caller unless repository.kind_of?(Repository)
+      raise ArgumentError, "+repository+ must be a LazyMapper::Repository, but was #{repository.class}", caller unless repository.is_a?(Repository)
       raise ArgumentError, "+model+ is a #{model.class}, but is not a type of Resource", caller                 unless model < Model
 
       @repository              = repository
@@ -118,10 +118,10 @@ module LazyMapper
       entry_keys = @array.map { |resource| resource.key }
 
       keys = {}
-      @key_properties.zip(entry_keys.transpose).each do |property,values|
+      @key_properties.zip(entry_keys.transpose).each do |property, values|
         keys[property] = values.size == 1 ? values[0] : values
       end
       keys
     end
-  end # class Collection
-end # module LazyMapper
+  end
+end

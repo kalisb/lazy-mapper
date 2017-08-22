@@ -6,7 +6,7 @@ require Pathname(__FILE__).dirname.expand_path.parent + 'lib/lazy_mapper'
 # gem-ове като sqlite3 за комуникация със съответната база от данни.
 # Нямате право да използвате наготово ORM библиотеки.
 LazyMapper.setup(:default,  'sqlite3:test.db')
-LazyMapper.setup(:default, 'postgres://postgres:test@localhost/postgres')
+#LazyMapper.setup(:default, 'postgres://postgres:test@localhost/postgres')
 @adapter = repository(:default).adapter
 
 # Възможност за логване на направените към базата

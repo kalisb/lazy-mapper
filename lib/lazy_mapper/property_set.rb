@@ -6,7 +6,7 @@ module LazyMapper
       @property_for[name]
     end
 
-    alias has_property? []
+    alias_method 'has_property?', '[]'
 
     def add(*properties)
       @entries.push(*properties)
@@ -14,7 +14,7 @@ module LazyMapper
       self
     end
 
-    alias << add
+    alias_method '<<', 'add'
 
     def length
       @entries.length
@@ -49,12 +49,12 @@ module LazyMapper
         raise ArgumentError, "+values+ must be nil or an Array, but was a #{values.class}", caller
       end
 
-      each_with_index { |property,i| property.set(resource, values.nil? ? nil : values[i]) }
+      each_with_index { |property, i| property.set(resource, values.nil? ? nil : values[i]) }
     end
 
     def property_contexts(name)
       contexts = []
-      lazy_contexts.each do |context,property_names|
+      lazy_contexts.each do |context, property_names|
         contexts << context if property_names.include?(name)
       end
       contexts
@@ -76,7 +76,7 @@ module LazyMapper
       Array(names).each do |name|
         contexts = property_contexts(name)
         if contexts.empty?
-          result << name  # not lazy
+          result << name
         else
           result |= lazy_contexts.values_at(*contexts).flatten.uniq
         end
@@ -93,7 +93,6 @@ module LazyMapper
 
       properties = map do |property|
         type = property.type
-        type = Integer if Fixnum == type
         Property.new(target || property.model, property.name, type, property.options.dup)
       end
 
@@ -115,7 +114,7 @@ module LazyMapper
     end
 
     def hash_for_property_for
-      Hash.new do |h,k|
+      Hash.new do |h, k|
         raise "Key must be a Symbol or String, but was #{k.class}" unless [String, Symbol].include?(k.class)
 
         ksym = k.to_sym
@@ -126,7 +125,7 @@ module LazyMapper
     end
 
     def lazy_contexts
-      @lazy_contexts ||= Hash.new { |h,context| h[context] = [] }
+      @lazy_contexts ||= Hash.new { |h, context| h[context] = [] }
     end
 
     def parse_index(index, property, index_hash)
@@ -138,6 +137,5 @@ module LazyMapper
       when Array then index.each { |idx| parse_index(idx, property, index_hash) }
       end
     end
-
-  end # class PropertySet
-end # module LazyMapper
+  end
+end

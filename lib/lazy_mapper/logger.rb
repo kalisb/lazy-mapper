@@ -1,8 +1,7 @@
-require "time" # httpdate
+require "time"
 # ==== Public LazyMapper Logger API
 module LazyMapper
-
-  class << self #:nodoc:
+  class << self
     attr_accessor :logger
   end
 
@@ -12,8 +11,7 @@ module LazyMapper
 
     ##
     #   LazyMapper::Logger::LEVELS[:fatal, :error, :warn, :info, :debug]
-    LEVELS =
-    {
+    LEVELS = {
       fatal: 7,
       error: 6,
       warn: 4,
@@ -32,7 +30,7 @@ module LazyMapper
     end
 
     def initialize_log(log)
-      close if @log # be sure that we don't leave open files laying around.
+      close if @log
       log ||= "log/lazy_mapper.log"
       if log.respond_to?(:write)
         @log = log
@@ -56,12 +54,11 @@ module LazyMapper
 
     # To replace an existing logger with a new one:
     def set_log(log, log_level = nil)
-      if log_level && LEVELS[log_level.to_sym]
-        @level = LEVELS[log_level.to_sym]
-      else
-        @level = LEVELS[:debug]
-      end
-
+      @level = if log_level && LEVELS[log_level.to_sym]
+                 LEVELS[log_level.to_sym]
+               else
+                 LEVELS[:debug]
+               end
       initialize_log(log)
 
       LazyMapper.logger = self
@@ -84,16 +81,15 @@ module LazyMapper
       message << "\n" unless message[-1] == ?\n
       @log.write_method(message)
     end
-    alias << push
+    alias_method '<<', 'push'
 
     # Generate the following logging methods for LazyMapper.logger as described
     # in the API:
     #  :fatal, :error, :warn, :info, :debug
-    LEVELS.each_pair do |name, number|
-      define_method("#{name}") do |message|
+    LEVELS.each_pair do |name, _|
+      define_method(name.to_s) do |message|
         self.<<(message) if level <= LEVELS[name]
       end
     end
-
-  end # class Logger
-end # module LazyMapper
+  end
+end

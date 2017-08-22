@@ -8,7 +8,7 @@ module LazyMapper
         hash == other.hash
       end
 
-      alias eql? ==
+      alias_method 'eql?', '=='
 
       def hash
         @property.hash + @direction.hash
@@ -23,7 +23,7 @@ module LazyMapper
         @property  = property
         @direction = direction
       end
-    end # class Direction
+    end
 
     class Operator
       attr_reader :target, :operator
@@ -42,17 +42,15 @@ module LazyMapper
         @target     = target
         @operator   = operator
       end
-    end # class Operator
+    end
 
     class Path
-
       attr_reader :relationships, :model, :property, :operator
 
-
       def initialize(repository, relationships, model, property_name = nil)
-        raise ArgumentError, "+repository+ is not a Repository, but was #{repository.class}", caller unless Repository  === repository
-        raise ArgumentError, "+relationships+ is not an Array, it is a #{relationships.class}", caller unless Array  === relationships
-        raise ArgumentError, "+model+ is not a DM::Resource, it is a #{model}", caller   unless model.ancestors.include?(LazyMapper::Resource)
+        raise ArgumentError, "+repository+ is not a Repository, but was #{repository.class}", caller unless Repository === repository
+        raise ArgumentError, "+relationships+ is not an Array, it is a #{relationships.class}", caller unless Array === relationships
+        raise ArgumentError, "+model+ is not a Model, it is a #{model}", caller unless model.ancestors.include?(Model)
         raise ArgumentError, "+property_name+ is not a Symbol, it is a #{property_name.class}", caller unless Symbol === property_name || property_name.nil?
 
         @repository    = repository
@@ -62,41 +60,38 @@ module LazyMapper
       end
 
       [:gt, :gte, :lt, :lte, :not, :eql, :like, :in].each do |sym|
-
         self.class_eval <<-RUBY
           def #{sym}
             Operator.new(self, :#{sym})
           end
         RUBY
-
       end
 
       def method_missing(method, *args)
         if relationship = @model.relationships(@repository.name)[method]
           clazz = if @model == relationship.child_model
-           relationship.parent_model
-          else
-           relationship.child_model
-          end
+                    relationship.parent_model
+                  else
+                    relationship.child_model
+                  end
           relations = []
           relations.concat(@relationships)
-          relations << relationship #@model.relationships[method]
-          return Query::Path.new(@repository, relations,clazz)
+          relations << relationship
+          return Query::Path.new(@repository, relations, clazz)
         end
 
         if @model.properties(@model.repository.name)[method]
           @property = @model.properties(@model.repository.name)[method]
           return self
         end
-        raise NoMethodError, "undefined property or association `#{method}' on #{@model}"
+        super
       end
 
       # duck type the DM::Query::Path to act like a DM::Property
       def field(*args)
         @property ? @property.field(*args) : nil
       end
-
-    end # class Path
+    end
 
     OPTIONS = [
       :reload, :offset, :limit, :order, :fields, :links, :includes, :conditions
@@ -107,7 +102,8 @@ module LazyMapper
     def update(other)
       other = self.class.new(@repository, model, other) if Hash === other
 
-      @model, @reload = other.model, other.reload
+      @model = other.model
+      @reload = other.reload
 
       @offset = other.offset unless other.offset == 0
       @limit  = other.limit  unless other.limit.nil?
@@ -133,26 +129,24 @@ module LazyMapper
 
     def ==(other)
       return true if super
-      # TODO: add a #hash method, and then use it in the comparison, eg:
-      #   return hash == other.hash
       @model    == other.model    &&
       @reload   == other.reload   &&
       @offset   == other.offset   &&
       @limit    == other.limit    &&
-      @order    == other.order    &&  # order is significant, so do not sort this
-      @fields   == other.fields   &&  # TODO: sort this so even if the order is different, it is equal
-      @links    == other.links    &&  # TODO: sort this so even if the order is different, it is equal
-      @includes == other.includes &&  # TODO: sort this so even if the order is different, it is equal
+      @order    == other.order    &&
+      @fields   == other.fields   &&
+      @links    == other.links    &&
+      @includes == other.includes &&
       @conditions.sort_by { |c| c.at(0).hash + c.at(1).hash + c.at(2).hash } == other.conditions.sort_by { |c| c.at(0).hash + c.at(1).hash + c.at(2).hash }
     end
 
-    alias eql? ==
+    alias_method 'eql?', '=='
 
     def parameters
       parameters = []
       conditions.each do |tuple|
         next unless tuple.size == 3
-        operator, property, bind_value = *tuple
+        operator, _, bind_value = *tuple
         if :raw == operator
           parameters.push(*bind_value)
         else
@@ -182,7 +176,7 @@ module LazyMapper
       @conditions = new_conditions
     end
 
-    alias reload? reload
+    alias_method 'reload?', 'reload'
 
     def inspect
       attrs = [
@@ -196,7 +190,7 @@ module LazyMapper
         [ :offset,     offset ],
       ]
 
-      "#<#{self.class.name} #{attrs.map { |(k,v)| "@#{k}=#{v.inspect}" } * ' '}>"
+      "#<#{self.class.name} #{attrs.map { |(k, v)| "@#{k}=#{v.inspect}" } * ' '}>"
     end
 
     private
@@ -204,7 +198,7 @@ module LazyMapper
     def initialize(repository, model, options = {})
       raise TypeError, "+repository+ must be a Repository, but is #{repository.class}" unless Repository === repository
 
-      options.each_pair { |k,v| option[k] = v.call if v.is_a? Proc } if options.is_a? Hash
+      options.each_pair { |k, v| option[k] = v.call if v.is_a? Proc } if options.is_a? Hash
 
       validate_model(model)
       validate_options(options)
@@ -212,15 +206,15 @@ module LazyMapper
       @repository = repository
       @properties = model.properties(@repository.name)
 
-      @model      = model                           # must be Class that includes DM::Resource
-      @reload     = options.fetch :reload,   false  # must be true or false
-      @offset     = options.fetch :offset,   0      # must be an Integer greater than or equal to 0
-      @limit      = options.fetch :limit,    nil    # must be an Integer greater than or equal to 1
-      @order      = options.fetch :order,    []     # must be an Array of Symbol, DM::Query::Direction or DM::Property
-      @fields     = options.fetch :fields,   @properties.defaults  # must be an Array of Symbol, String or DM::Property
-      @links      = options.fetch :links,    []     # must be an Array of Tuples - Tuple [DM::Query,DM::Assoc::Relationship]
-      @includes   = options.fetch :includes, []     # must be an Array of DM::Query::Path
-      @conditions = []                              # must be an Array of triplets (or pairs when passing in raw String queries)
+      @model      = model
+      @reload     = options.fetch :reload,   false
+      @offset     = options.fetch :offset,   0
+      @limit      = options.fetch :limit,    nil
+      @order      = options.fetch :order,    []
+      @fields     = options.fetch :fields,   @properties.defaults
+      @links      = options.fetch :links,    []
+      @includes   = options.fetch :includes, []
+      @conditions = []
 
       # normalize order and fields
       normalize_order
@@ -230,7 +224,6 @@ module LazyMapper
       normalize_links
       normalize_includes
 
-
       # treat all non-options as conditions
       (options.keys - OPTIONS - OPTIONS.map(&:to_s)).each do |k|
         append_condition(k, options[k])
@@ -238,13 +231,13 @@ module LazyMapper
 
       # parse raw options[:conditions] differently
       if conditions = options[:conditions]
-        if conditions.kind_of?(Array)
+        if conditions.is_a?(Array)
           raw_query, *bind_values = conditions
           @conditions << if bind_values.empty?
-            [ :raw, raw_query ]
-          else
-            [ :raw, raw_query, bind_values ]
-          end
+                           [ :raw, raw_query ]
+                         else
+                           [ :raw, raw_query, bind_values ]
+                         end
         end
       end
     end
@@ -265,7 +258,7 @@ module LazyMapper
       raise ArgumentError, "+options+ must be a Hash, but was #{options.class}" unless Hash === options
 
       # validate the reload option
-      if options.has_key?(:reload) && options[:reload] != true && options[:reload] != false
+      if options.key?(:reload) && options[:reload] != true && options[:reload] != false
         raise ArgumentError, "+options[:reload]+ must be true or false, but was #{options[:reload].inspect}"
       end
 
@@ -274,8 +267,8 @@ module LazyMapper
         value = options[attribute]
         raise ArgumentError, "+options[:#{attribute}]+ must be an Integer, but was #{value.class}" unless Integer === value
       end
-      raise ArgumentError, '+options[:offset]+ must be greater than or equal to 0' if options.has_key?(:offset) && !(options[:offset] >= 0)
-      raise ArgumentError, '+options[:limit]+ must be greater than or equal to 1'  if options.has_key?(:limit)  && !(options[:limit]  >= 1)
+      raise ArgumentError, '+options[:offset]+ must be greater than or equal to 0' if options.key?(:offset) && !(options[:offset] >= 0)
+      raise ArgumentError, '+options[:limit]+ must be greater than or equal to 1'  if options.key?(:limit)  && !(options[:limit]  >= 1)
 
       # validate the order, fields, links, includes and conditions options
       ([ :order, :fields, :links, :includes, :conditions ] & options.keys).each do |attribute|
@@ -299,34 +292,19 @@ module LazyMapper
     def normalize_order
       @order = @order.map do |order_by|
         case order_by
-          when Direction
-            # NOTE: The property is available via order_by.property
-            # TODO: if the Property's model doesn't match
-            # self.model, append the property's model to @links
-            # eg:
-            #if property.model != self.model
-            #  @links << discover_path_for_property(property)
-            #end
-
-            order_by
-          when Property
-            # TODO: if the Property's model doesn't match
-            # self.model, append the property's model to @links
-            # eg:
-            #if property.model != self.model
-            #  @links << discover_path_for_property(property)
-            #end
-
-            Direction.new(order_by)
-          when Operator
-            property = @properties[order_by.target]
-            Direction.new(property, order_by.operator)
-          when Symbol, String
-            property = @properties[order_by]
-            raise ArgumentError, "+options[:order]+ entry #{order_by} does not map to a LazyMapper::Property" if property.nil?
-            Direction.new(property)
-          else
-            raise ArgumentError, "+options[:order]+ entry #{order_by.inspect} not supported"
+        when Direction
+          order_by
+        when Property
+          Direction.new(order_by)
+        when Operator
+          property = @properties[order_by.target]
+          Direction.new(property, order_by.operator)
+        when Symbol, String
+          property = @properties[order_by]
+          raise ArgumentError, "+options[:order]+ entry #{order_by} does not map to a LazyMapper::Property" if property.nil?
+          Direction.new(property)
+        else
+          raise ArgumentError, "+options[:order]+ entry #{order_by.inspect} not supported"
         end
       end
     end
@@ -335,20 +313,14 @@ module LazyMapper
     def normalize_fields
       @fields = @fields.map do |field|
         case field
-          when Property
-            # TODO: if the Property's model doesn't match
-            # self.model, append the property's model to @links
-            # eg:
-            #if property.model != self.model
-            #  @links << discover_path_for_property(property)
-            #end
-            field
-          when Symbol, String
-            property = @properties[field]
-            raise ArgumentError, "+options[:fields]+ entry #{field} does not map to a LazyMapper::Property" if property.nil?
-            property
-          else
-            raise ArgumentError, "+options[:fields]+ entry #{field.inspect} not supported"
+        when Property
+          field
+        when Symbol, String
+          property = @properties[field]
+          raise ArgumentError, "+options[:fields]+ entry #{field} does not map to a LazyMapper::Property" if property.nil?
+          property
+        else
+          raise ArgumentError, "+options[:fields]+ entry #{field.inspect} not supported"
         end
       end
     end
@@ -361,14 +333,14 @@ module LazyMapper
       # the source and the target.
       @links = @links.map do |link|
         case link
-          when Associations::Relationship
-            link
-          when Symbol, String
-            link = link.to_sym if String === link
-            raise ArgumentError, "+options[:links]+ entry #{link} does not map to a LazyMapper::Associations::Relationship" unless model.relationships(@repository.name).has_key?(link)
-            model.relationships(@repository.name)[link]
-          else
-            raise ArgumentError, "+options[:links]+ entry #{link.inspect} not supported"
+        when Associations::Relationship
+          link
+        when Symbol, String
+          link = link.to_sym if String === link
+          raise ArgumentError, "+options[:links]+ entry #{link} does not map to a LazyMapper::Associations::Relationship" unless model.relationships(@repository.name).key?(link)
+          model.relationships(@repository.name)[link]
+        else
+          raise ArgumentError, "+options[:links]+ entry #{link.inspect} not supported"
         end
       end
     end
@@ -384,7 +356,7 @@ module LazyMapper
     #
     def validate_query_path_links(path)
       path.relationships.map do |relationship|
-        @links << relationship unless (@links.include?(relationship) || @includes.include?(relationship))
+        @links << relationship unless @links.include?(relationship) || @includes.include?(relationship)
       end
     end
 
@@ -392,54 +364,43 @@ module LazyMapper
       operator = :eql
       bind_value = bind_value.call if bind_value.is_a?(Proc)
       property = case clause
-        when Property
-          clause
-        when Query::Path
-          validate_query_path_links(clause)
-          clause
-        when Operator
-          operator = clause.operator
-          if clause.target.is_a?(Symbol)
-            @properties[clause.target]
-          elsif clause.target.is_a?(Query::Path)
-            validate_query_path_links(clause.target)
-            clause.target
-          end
-        when Symbol
-          @properties[clause]
-        when String
-          if clause =~ /\w\.\w/
-            query_path = @model
-            clause.split(".").each { |piece| query_path = query_path.send(piece) }
-            append_condition(query_path, bind_value)
-            return
-          else
-            @properties[clause]
-          end
-        else
-          raise ArgumentError, "Condition type #{clause.inspect} not supported"
-      end
+                 when Property
+                   clause
+                 when Query::Path
+                   validate_query_path_links(clause)
+                   clause
+                 when Operator
+                   operator = clause.operator
+                   if clause.target.is_a?(Symbol)
+                     @properties[clause.target]
+                   elsif clause.target.is_a?(Query::Path)
+                     validate_query_path_links(clause.target)
+                     clause.target
+                   end
+                 when Symbol
+                   @properties[clause]
+                 when String
+                   if clause =~ /\w\.\w/
+                     query_path = @model
+                     clause.split(".").each { |piece| query_path = query_path.send(piece) }
+                     append_condition(query_path, bind_value)
+                     return
+                   else
+                     @properties[clause]
+                   end
+                 else
+                   raise ArgumentError, "Condition type #{clause.inspect} not supported"
+                 end
 
       raise ArgumentError, "Clause #{clause.inspect} does not map to a LazyMapper::Property" if property.nil?
 
       @conditions << [ operator, property, bind_value ]
     end
 
-    # TODO: check for other mutually exclusive operator + property
-    # combinations.  For example if self's conditions were
-    # [ :gt, :amount, 5 ] and the other's condition is [ :lt, :amount, 2 ]
-    # there is a conflict.  When in conflict the other's conditions
-    # overwrites self's conditions.
-
-    # TODO: Another condition is when the other condition operator is
-    # eql, this should over-write all the like,range and list operators
-    # for the same property, since we are now looking for an exact match.
-    # Vice versa, passing in eql should overwrite all of those operators.
-
     def update_conditions(other)
       # build an index of conditions by the property and operator to
       # avoid nested looping
-      conditions_index = Hash.new { |h,k| h[k] = {} }
+      conditions_index = Hash.new { |h, k| h[k] = {} }
       @conditions.each do |condition|
         operator, property = *condition
         next if :raw == operator
@@ -453,17 +414,16 @@ module LazyMapper
 
         unless :raw == other_operator
           if condition = conditions_index[other_property][other_operator]
-            operator, property, bind_value = *condition
+            operator, _, bind_value = *condition
 
             # overwrite the bind value in the existing condition
             condition[2] = case operator
-              when :eql, :like then other_bind_value
-              when :gt,  :gte  then [ bind_value, other_bind_value ].min
-              when :lt,  :lte  then [ bind_value, other_bind_value ].max
-              when :not, :in   then Array(bind_value) | Array(other_bind_value)
-            end
-
-            next  # process the next other condition
+                           when :eql, :like then other_bind_value
+                           when :gt,  :gte  then [ bind_value, other_bind_value ].min
+                           when :lt,  :lte  then [ bind_value, other_bind_value ].max
+                           when :not, :in   then Array(bind_value) | Array(other_bind_value)
+                           end
+            next
           end
         end
 
@@ -471,5 +431,5 @@ module LazyMapper
         @conditions << other_condition.dup
       end
     end
-  end # class Query
-end # module LazyMapper
+  end
+end

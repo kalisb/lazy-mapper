@@ -9,7 +9,6 @@ require dir / 'one_to_one'
 
 module LazyMapper
   module Associations
-
     class ImmutableAssociationError < RuntimeError
     end
 
@@ -19,12 +18,12 @@ module LazyMapper
     include OneToOne
 
     def relationships(repository_name = default_repository_name)
-      @relationships ||= Hash.new { |h,k| h[k] = k == Repository.default_name ? {} : h[Repository.default_name].dup }
+      @relationships ||= Hash.new { |h, k| h[k] = k == Repository.default_name ? {} : h[Repository.default_name].dup }
       @relationships[repository_name]
     end
 
     def n
-      1.0/0
+      1.0 / 0
     end
 
     #
@@ -38,32 +37,31 @@ module LazyMapper
       raise ArgumentError, 'Cardinality may not be n..n.  The cardinality specifies the min/max number of results from the association' if options[:min] == n && options[:max] == n
 
       relationship = if options[:max] == 1
-        one_to_one(options.delete(:name), options)
-      else
-        one_to_many(options.delete(:name), options)
-      end
+                       one_to_one(options.delete(:name), options)
+                     else
+                       one_to_many(options.delete(:name), options)
+                     end
       relationship
     end
 
-  private
-
-    def extract_throughness(name)
-      case name
-      when Hash
-        {name: name.values.first, through: name.keys.first}
-      when Symbol
-        {name: name}
-      else
-        raise ArgumentError, "Name of association must be Hash or Symbol, not #{name.inspect}"
+    private
+      def extract_throughness(name)
+        case name
+        when Hash
+          {name: name.values.first, through: name.keys.first}
+        when Symbol
+          {name: name}
+        else
+          raise ArgumentError, "Name of association must be Hash or Symbol, not #{name.inspect}"
+        end
       end
-    end
 
-    # A support method form converting Fixnum, Range or Infinity values into a
-    # {min:x, max:y} hash.
-    #
-    # @api private
-    def extract_min_max(constraints)
-      case constraints
+      # A support method form converting Fixnum, Range or Infinity values into a
+      # {min:x, max:y} hash.
+      #
+      # @api private
+      def extract_min_max(constraints)
+        case constraints
         when Range
           raise ArgumentError, "Constraint min (#{constraints.first}) cannot be larger than the max (#{constraints.last})" if constraints.first > constraints.last
           { min: constraints.first, max: constraints.last }
@@ -73,11 +71,11 @@ module LazyMapper
           {}
         else
           raise ArgumentError, "Constraint #{constraints.inspect} (#{constraints.class}) not handled must be one of Range, Fixnum, Bignum, Infinity(n)"
+        end
       end
-    end
-  end # module Associations
+  end
 
-  module LazyMapper::ClassMethods
+  module ClassMethods
     include LazyMapper::Associations
-  end # module ClassMethods
-end # module LazyMapper
+  end
+end

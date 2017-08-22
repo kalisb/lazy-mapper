@@ -1,11 +1,9 @@
 require 'set'
-
 module LazyMapper
-
   module ClassMethods
     def self.extended(model)
-      model.instance_variable_set(:@storage_names, Hash.new { |h,k| h[k] = repository(k).adapter.resource_naming_convention.call(model.instance_eval do default_storage_name end) })
-      model.instance_variable_set(:@properties,    Hash.new { |h,k| h[k] = k == Repository.default_name ? PropertySet.new : h[Repository.default_name].dup })
+      model.instance_variable_set(:@storage_names, Hash.new { |h, k| h[k] = repository(k).adapter.resource_naming_convention.call(model.instance_eval { default_storage_name } ) })
+      model.instance_variable_set(:@properties,    Hash.new { |h, k| h[k] = k == Repository.default_name ? PropertySet.new : h[Repository.default_name].dup })
     end
 
     ##
@@ -62,7 +60,7 @@ module LazyMapper
     end
 
     def repositories
-      [repository] + @properties.keys.collect do |repository_name| LazyMapper.repository(repository_name) end
+      [repository] + @properties.keys.collect { |repository_name| LazyMapper.repository(repository_name) }
     end
 
     def properties(repository_name = default_repository_name)
@@ -93,19 +91,19 @@ module LazyMapper
     # Create an instance of Model with the given attributes
     ##
     def create(attributes = {})
-        resource = self.new
-        attributes.each do |key, value|
-            resource.send(:instance_variable_set, "@#{key}", value)
-        end
-        resource.save
-        resource
+      resource = self.new
+      attributes.each do |key, value|
+        resource.send(:instance_variable_set, "@#{key}", value)
+      end
+      resource.save
+      resource
     end
 
     ##
     #
     # @see Repository#all
     def all(options = {})
-      if Hash === options && options.has_key?(:repository)
+      if Hash === options && options.key?(:repository)
         repository(options[:repository]).all(self, options)
       else
         repository.all(self, options)
@@ -121,7 +119,7 @@ module LazyMapper
     #
     # @see Repository#first
     def first(options = {})
-      if Hash === options && options.has_key?(:repository)
+      if Hash === options && options.key?(:repository)
         repository(options[:repository]).first(self, options)
       else
         repository.first(self, options)
@@ -130,8 +128,8 @@ module LazyMapper
 
     # Count results (given the conditions)
     def count(*args)
-      with_repository_and_property(*args) do |repository,property,options|
-         repository.count(self, property, options)
+      with_repository_and_property(*args) do |repository, property, options|
+        repository.count(self, property, options)
       end
     end
 
@@ -148,31 +146,31 @@ module LazyMapper
     end
 
     def min(*args)
-     with_repository_and_property(*args) do |repository,property,options|
+      with_repository_and_property(*args) do |repository, property, options|
+        check_property_is_number(property)
+        repository.min(self, property, options)
+      end
+    end
+
+   def max(*args)
+     with_repository_and_property(*args) do |repository, property, options|
        check_property_is_number(property)
-       repository.min(self, property, options)
+       repository.max(self, property, options)
      end
    end
 
-   def max(*args)
-      with_repository_and_property(*args) do |repository,property,options|
-        check_property_is_number(property)
-        repository.max(self, property, options)
-      end
-  end
-
   def avg(*args)
-      with_repository_and_property(*args) do |repository,property,options|
-        check_property_is_number(property)
-        repository.avg(self, property, options)
-      end
+    with_repository_and_property(*args) do |repository, property, options|
+      check_property_is_number(property)
+      repository.avg(self, property, options)
+    end
   end
 
   def sum(*args)
-     with_repository_and_property(*args) do |repository,property,options|
-       check_property_is_number(property)
-       repository.sum(self, property, options)
-     end
+    with_repository_and_property(*args) do |repository, property, options|
+      check_property_is_number(property)
+      repository.sum(self, property, options)
+    end
   end
 
     # TODO SPEC
@@ -202,9 +200,6 @@ module LazyMapper
       repository(repository_name).storage_exists?(storage_name(repository_name))
     end
 
-    # TODO: remove this alias
-    alias exists? storage_exists?
-
     private
 
     def default_storage_name
@@ -216,20 +211,17 @@ module LazyMapper
     end
 
     def with_repository_and_property(*args, &block)
-      options       = Hash === args.last ? args.pop : {}
+      options = Hash === args.last ? args.pop : {}
       property_name = args.shift
 
       repository(*Array(options[:repository])) do |repository|
         property = properties(repository.name)[property_name] if property_name
-        yield repository, property, options
+        block.yield repository, property, options if block_given?
       end
     end
-
-  end # module ClassMethods
-
+  end
 
   class Model
-
     ##
     # Add basic class methods
     ##
@@ -262,7 +254,7 @@ module LazyMapper
       ivar_name = property.instance_variable_name
 
       unless new_record? || instance_variable_defined?(ivar_name)
-        property.lazy? ? lazy_load(name) : lazy_load(self.class.properties(repository.name).reject {|p| instance_variable_defined?(p.instance_variable_name) || p.lazy? })
+        property.lazy? ? lazy_load(name) : lazy_load(self.class.properties(repository.name).reject { |p| instance_variable_defined?(p.instance_variable_name) || p.lazy? })
       end
 
       value = instance_variable_get(ivar_name)
@@ -298,15 +290,15 @@ module LazyMapper
       attributes == other.attributes
     end
 
-    alias == eql?
+    alias_method '==', 'eql?'
 
     def inspect
-      attrs = attributes.inject([]) {|s,(k,v)| s << "#{k}=#{v.inspect}"}
+      attrs = attributes.inject([]) { |s, (k, v)| s << "#{k}=#{v.inspect}" }
       "#<#{self.class.name} #{attrs.join(" ")}>"
     end
 
     def pretty_print(pp)
-      attrs = attributes.inject([]) {|s,(k,v)| s << [k,v]}
+      attrs = attributes.inject([]) { |s, (k, v)| s << [k, v] }
       pp.group(1, "#<#{self.class.name}", ">") do
         pp.breakable
         pp.seplist(attrs) do |k_v|
@@ -332,13 +324,11 @@ module LazyMapper
       @parent_associations ||= []
     end
 
-
     ##
     # default id method to return the resource id when there is a
     # single key, and the model was defined with a primary key named
     # something other than id
     #
-    # @return <Array[Key], Key> key object
     def id
       key = self.key
       key.first if key.size == 1
@@ -414,7 +404,7 @@ module LazyMapper
       (parent_associations + child_associations).each { |association| association.reload! }
       self
     end
-    alias reload! reload
+    alias_method 'reload!', 'reload'
 
     def reload_attributes(*attributes)
       @collection.reload(fields: attributes)
@@ -442,7 +432,7 @@ module LazyMapper
 
     # Mass-assign mapped fields.
     def attributes=(values_hash)
-      values_hash.each_pair do |k,v|
+      values_hash.each_pair do |k, v|
         setter = "#{k.to_s.sub(/\?\z/, '')}="
         send(setter, v) if self.respond_to?(setter)
       end
@@ -459,7 +449,7 @@ module LazyMapper
     def update_attributes(hash, *update_only)
       raise 'Update takes a hash as first parameter' unless hash.is_a?(Hash)
       loop_thru = update_only.empty? ? hash.keys : update_only
-      loop_thru.each {|attr|  send("#{attr}=", hash[attr])}
+      loop_thru.each { |attr| send("#{attr}=", hash[attr]) }
       save
     end
 
@@ -473,16 +463,16 @@ module LazyMapper
 
     private
 
-    def initialize(*args) # :nodoc:
+    def initialize(*args)
       validate_resource
       initialize_with_attributes(*args) unless args.empty?
     end
 
-    def initialize_with_attributes(details) # :nodoc:
+    def initialize_with_attributes(details)
       self.attributes = details
     end
 
-    def validate_resource # :nodoc:
+    def validate_resource
       if self.class.properties.empty? && self.class.relationships.empty?
         raise IncompleteResourceError, 'Resources must have at least one property or relationship to be initialized.'
       end
@@ -508,10 +498,10 @@ module LazyMapper
     end
 
     def private_attributes=(values_hash)
-      values_hash.each_pair do |k,v|
+      values_hash.each_pair do |k, v|
         setter = "#{k.to_s.sub(/\?\z/, '')}="
         send(setter, v) if respond_to?(setter)
       end
     end
-  end # module Resource
-end # module LazyMapper
+  end
+end

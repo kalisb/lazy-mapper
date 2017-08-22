@@ -3,14 +3,12 @@ require 'time'
 require 'bigdecimal'
 
 module LazyMapper
-
   ##
   # Properties for a model are not derived from a database structure, but
   # instead explicitly declared inside your model class definitions. These
   # properties then map fields in your # repository/database.
   #
   class Property
-
     PROPERTY_OPTIONS = [ :key, :lazy, :serial]
 
     attr_reader :model, :name, :type, :options, :length, :instance_variable_name
@@ -28,30 +26,26 @@ module LazyMapper
 
     def eql?(o)
       if o.is_a?(Property)
-        return o.model == @model && o.name == @name
+        o.model == @model && o.name == @name
       else
-        return false
+        false
       end
     end
 
     def hash
-      if @custom && !@bound
-        @type.bind(self)
-      end
-      return @model.hash + @name.hash
+      @type.bind(self) if @custom && !@bound
+      @model.hash + @name.hash
     end
 
     def length
       @length.is_a?(Range) ? @length.max : @length
     end
-    alias size length
-
+    alias_method 'size', 'length'
 
     # Returns whether or not the property is to be lazy-loaded
     def lazy?
       @lazy
     end
-
 
     # Returns whether or not the property is a key or a part of a key
     def key?
@@ -84,12 +78,12 @@ module LazyMapper
     def lazy_load(resource)
       # TODO: refactor this section
       contexts = if lazy?
-        name
-      else
-        model.properties(resource.repository.name).reject do |property|
-          property.lazy? || resource.attribute_loaded?(property.name)
-        end
-      end
+                   name
+                 else
+                   model.properties(resource.repository.name).reject do |property|
+                     property.lazy? || resource.attribute_loaded?(property.name)
+                   end
+                 end
       resource.send(:lazy_load, contexts)
     end
 
@@ -100,7 +94,7 @@ module LazyMapper
       if    type == TrueClass  then %w[ true 1 t ].include?(value.to_s.downcase)
       elsif type == String     then value.to_s
       elsif type == Float      then value.to_f
-      elsif type == Fixnum     then value.to_i
+      elsif type == Integer    then value.to_i
       elsif type == BigDecimal then BigDecimal(value.to_s)
       elsif type == DateTime   then DateTime.parse(value.to_s)
       elsif type == Date       then Date.parse(value.to_s)
@@ -128,9 +122,9 @@ module LazyMapper
       # Custom-Type and out of Property.
       @primitive = @options.fetch(:primitive, @type.respond_to?(:primitive) ? @type.primitive : @type)
 
-      @getter   = TrueClass == @primitive ? "#{@name}?".to_sym : @name
+      @getter = TrueClass == @primitive ? "#{@name}?".to_sym : @name
       @serial = @options.fetch(:serial, false)
-      @key      = @options.fetch(:key,      @serial || false)
+      @key = @options.fetch(:key, @serial || false)
       @lazy = @options.fetch(:lazy, @type.respond_to?(:lazy) ? @type.lazy : false) && !@key
 
       create_getter
@@ -140,7 +134,6 @@ module LazyMapper
       @model.property_serialization_setup(self) if @model.respond_to?(:property_serialization_setup)
 
     end
-
 
     # defines the getter for the property
     def create_getter
@@ -166,5 +159,5 @@ module LazyMapper
         end
       EOS
     end
-  end # class Property
-end # module LazyMapper
+  end
+end
