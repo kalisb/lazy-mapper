@@ -21,7 +21,7 @@ class String
   end
 
   # Useful for heredocs - removes whitespace margin.
-  def margin(indicator = nil)
+  def margin
     lines = self.dup.split($/)
 
     min_margin = 0
@@ -40,6 +40,6 @@ class String
   #   "%s %s %s" % %w(one two three) #=> "one two three"
   #   "%3$s %2$s %1$s" % %w(one two three) #=> "three two one"
   def t(*values)
-    self.class::translate(self) % values
+    self.class.translate(self) % values
   end
-end # class String
+end

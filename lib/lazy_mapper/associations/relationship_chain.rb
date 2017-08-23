@@ -32,18 +32,14 @@ module LazyMapper
 
       def links
         if RelationshipChain === remote_relationship
-          remote_relationship.instance_eval do links end + [remote_relationship.instance_eval do near_relationship end]
+          remote_relationship.instance_eval { links } + [remote_relationship.instance_eval { near_relationship }]
         else
           [remote_relationship]
         end
       end
 
       def extra_links
-        if RelationshipChain === remote_relationship
-          []
-        else
-          []
-        end
+        []
       end
 
       def remote_relationship
@@ -68,10 +64,10 @@ module LazyMapper
         @child_properties         = options.fetch(:child_key)
 
         @name        = near_relationship.name
-        @query       = options.reject{ |key,val| OPTIONS.include?(key) }
+        @query       = options.reject { |key, _| OPTIONS.include?(key) }
         @extra_links = []
         @options     = options
       end
-    end # class Relationship
-  end # module Associations
-end # module LazyMapper
+    end
+  end
+end

@@ -1,19 +1,16 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 class Vegetable < LazyMapper::Model
-
   property :id, Integer, key: true
   property :name, String
 end
 
 class Fruit < LazyMapper::Model
-
   property :id, Integer, key: true
   property :name, String
 end
 
 class Grain < LazyMapper::Model
-
   property :id, Integer, key: true
   property :name, String
 end
@@ -67,7 +64,7 @@ describe LazyMapper::Repository do
 
         allow(@adapter).to receive(:create).with(@repository, resource).and_return(resource)
 
-        expect(@repository.save(resource)).to be true
+        @repository.save(resource)
       end
     end
 

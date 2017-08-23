@@ -24,33 +24,33 @@ describe "LazyMapper::IdentityMap" do
   end
 
   it "should return an instance on #get when it finds the requested instance" do
-    betsy = Cow.new({id:23,name:'Betsy'})
+    betsy = Cow.new({id: 23, name: 'Betsy'})
     map = LazyMapper::IdentityMap.new
     map.set(betsy.key, betsy)
     expect(map.get([23])).to eq betsy
   end
 
   it "should store an instance on #set" do
-    betsy = Cow.new({id:23,name:'Betsy'})
+    betsy = Cow.new({id: 23, name: 'Betsy'})
     map = LazyMapper::IdentityMap.new
     map.set(betsy.key, betsy)
     expect(map.get([23])).to eq betsy
   end
 
   it "should store instances with composite keys on #set" do
-    pig = Pig.new({id:1,composite:1,name: 'Pig'})
-    piggy = Pig.new({id:1,composite:2,name:'Piggy'})
+    pig = Pig.new({id: 1, composite: 1, name: 'Pig'})
+    piggy = Pig.new({id: 1, composite: 2, name: 'Piggy'})
 
     map = LazyMapper::IdentityMap.new
     map.set(pig.key, pig)
     map.set(piggy.key, piggy)
 
-    expect(map.get([1,1])).to eq pig
-    expect(map.get([1,2])).to eq piggy
+    expect(map.get([1, 1])).to eq pig
+    expect(map.get([1, 2])).to eq piggy
   end
 
   it "should remove an instance on #delete" do
-    betsy = Cow.new({id:23,name:'Betsy'})
+    betsy = Cow.new({ id: 23, name: 'Betsy'})
     map = LazyMapper::IdentityMap.new
     map.set(betsy.key, betsy)
     map.delete([23])
@@ -59,12 +59,19 @@ describe "LazyMapper::IdentityMap" do
 end
 
 describe "Second Level Caching" do
-
   before :all do
     @mock_class = Class.new do
-      def get(key);           raise NotImplementedError end
-      def set(key, instance); raise NotImplementedError end
-      def delete(key);        raise NotImplementedError end
+      def get(_key)
+        raise NotImplementedError
+      end
+
+      def set(_key, _instance)
+        raise NotImplementedError
+      end
+
+      def delete(_key)
+        raise NotImplementedError
+      end
     end
   end
 

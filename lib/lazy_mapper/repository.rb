@@ -2,11 +2,8 @@ module LazyMapper
   class Repository
     @adapters = {}
 
-    ##
-    #
-    # @return <Adapter> the adapters registered for this repository
-    def self.adapters
-      @adapters
+    class << self
+      attr_accessor :adapters
     end
 
     def self.context
@@ -17,7 +14,7 @@ module LazyMapper
       :default
     end
 
-    attr_reader :name, :adapter, :type_map
+    attr_reader :name, :adapter, :type_map, :adapters
 
     def identity_map_get(model, key)
       identity_map(model)[key]
@@ -28,7 +25,7 @@ module LazyMapper
     end
 
     def identity_map(model)
-     @identity_maps[model.class] ||= IdentityMap.new
+      @identity_maps[model.class] ||= IdentityMap.new
     end
 
     ##
@@ -42,10 +39,10 @@ module LazyMapper
     # retrieve a singular instance by query
     def first(model, options)
       query = if current_scope = model.send(:current_scope)
-        current_scope.merge(options.merge(limit: 1))
-      else
-        Query.new(self, model, options.merge(limit: 1))
-      end
+                current_scope.merge(options.merge(limit: 1))
+              else
+                Query.new(self, model, options.merge(limit: 1))
+              end
 
       adapter.read_set(self, query).first
     end
@@ -55,8 +52,8 @@ module LazyMapper
     end
 
     def min(model, property, options)
-     @adapter.min(self, property, scoped_query(model, options))
-   end
+      @adapter.min(self, property, scoped_query(model, options))
+    end
 
    def max(model, property, options)
      @adapter.max(self, property, scoped_query(model, options))
@@ -106,11 +103,9 @@ module LazyMapper
             resource.collection << resource
             success = true
           end
-        else
-          if adapter.update(self, resource)
-            resource.dirty_attributes.clear
-            success = true
-          end
+        elsif adapter.update(self, resource)
+          resource.dirty_attributes.clear
+          success = true
         end
       end
 
@@ -138,7 +133,6 @@ module LazyMapper
       end
     end
 
-
     def to_s
       "#<LazyMapper::Repository:#{@name}>"
     end
@@ -158,8 +152,7 @@ module LazyMapper
       adapter.storage_exists?(storage_name)
     end
 
-    # TODO: remove this alias
-    alias exists? storage_exists?
+    alias_method 'exists?', 'storage_exists?'
 
     private
 
@@ -178,6 +171,5 @@ module LazyMapper
         Query.new(self, model, options)
       end
     end
-
-  end # class Repository
-end # module LazyMapper
+  end
+end

@@ -3,7 +3,6 @@ module LazyMapper
     protected
 
     def with_scope(query, &block)
-      # merge the current scope with the passed in query
       with_exclusive_scope(current_scope ? current_scope.merge(query) : query, &block)
     end
 
@@ -13,7 +12,7 @@ module LazyMapper
       scope_stack << query
 
       begin
-        yield
+        yield unless block.nil
       ensure
         scope_stack.pop
       end
@@ -22,16 +21,16 @@ module LazyMapper
     private
 
     def scope_stack
-      scope_stack_for = Thread.current[:dm_scope_stack] ||= Hash.new { |h,k| h[k] = [] }
+      scope_stack_for = Thread.current[:dm_scope_stack] ||= Hash.new { |h, k| h[k] = [] }
       scope_stack_for[self]
     end
 
     def current_scope
       scope_stack.last
     end
-  end # module Scope
+  end
 
   module ClassMethods
     include Scope
-  end # module ClassMethods
-end # module LazyMapper
+  end
+end

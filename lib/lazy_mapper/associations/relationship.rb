@@ -9,7 +9,7 @@ module LazyMapper
         @child_key ||= begin
           model_properties = child_model.properties(repository_name)
 
-          child_key = parent_key.zip(@child_properties || []).map do |parent_property,property_name|
+          child_key = parent_key.zip(@child_properties || []).map do |parent_property, property_name|
             property_name ||= "#{name}_#{parent_property.name}".to_sym
             type = parent_property.type
             model_properties[property_name] || LazyMapper.repository(repository_name) { child_model.property(property_name, type) }
@@ -22,10 +22,10 @@ module LazyMapper
       def parent_key
         @parent_key ||= begin
           parent_key = if @parent_properties
-            parent_model.properties(repository_name).slice(*@parent_properties)
-          else
-            parent_model.key(repository_name)
-          end
+                         parent_model.properties(repository_name).slice(*@parent_properties)
+                       else
+                         parent_model.key(repository_name)
+                       end
 
           PropertySet.new(parent_key)
         end
@@ -64,10 +64,6 @@ module LazyMapper
 
       private
 
-      # +child_model_name and child_properties refers to the FK, parent_model_name
-      # and parent_properties refer to the PK.  For more information:
-      # http://edocs.bea.com/kodo/docs41/full/html/jdo_overview_mapping_join.html
-      # I wash my hands of it!
       def initialize(name, repository_name, child_model_name, parent_model_name, options = {}, &loader)
         raise ArgumentError, "+name+ should be a Symbol, but was #{name.class}", caller                         unless Symbol === name
         raise ArgumentError, "+repository_name+ must be a Symbol, but was #{repository_name.class}", caller     unless Symbol === repository_name
@@ -85,13 +81,13 @@ module LazyMapper
         @name              = name
         @repository_name   = repository_name
         @child_model_name  = child_model_name
-        @child_properties  = child_properties   # may be nil
-        @query             = options.reject { |k,v| OPTIONS.include?(k) }
+        @child_properties  = child_properties
+        @query             = options.reject { |k, _| OPTIONS.include?(k) }
         @parent_model_name = parent_model_name
-        @parent_properties = parent_properties  # may be nil
+        @parent_properties = parent_properties
         @options           = options
         @loader            = loader
       end
-    end # class Relationship
-  end # module Associations
-end # module LazyMapper
+    end
+  end
+end

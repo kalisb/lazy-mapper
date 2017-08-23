@@ -58,5 +58,4 @@ class Symbol
   def sum
     LazyMapper::Query::Operator.new(self, :sum)
   end
-
-end # class Symbol
+end

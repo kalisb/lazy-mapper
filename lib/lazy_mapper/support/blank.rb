@@ -4,39 +4,39 @@ class Object
   def blank?
     nil? || (respond_to?(:empty?) && empty?)
   end
-end # class Object
+end
 
 class Numeric
   # Numerics can't be blank
   def blank?
     false
   end
-end # class Numeric
+end
 
 class NilClass
   # Nils are always blank
   def blank?
     true
   end
-end # class NilClass
+end
 
 class TrueClass
   # True is not blank.
   def blank?
     false
   end
-end # class TrueClass
+end
 
 class FalseClass
   # False is always blank.
   def blank?
     true
   end
-end # class FalseClass
+end
 
 class String
   # Strips out whitespace then tests if the string is empty.
   def blank?
     strip.empty?
   end
-end # class String
+end

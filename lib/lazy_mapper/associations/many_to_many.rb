@@ -6,9 +6,8 @@ module LazyMapper
       private
 
       def many_to_many(name, options = {})
-        raise NotImplementedError
-        raise ArgumentError, "+name+ should be a Symbol, but was #{name.class}", caller     unless Symbol === name
-        raise ArgumentError, "+options+ should be a Hash, but was #{options.class}", caller unless Hash   === options
+        raise ArgumentError, "+name+ should be a Symbol, but was #{name.class}", caller unless Symbol === name
+        raise ArgumentError, "+options+ should be a Hash, but was #{options.class}", caller unless Hash === options
 
         child_model_name  = LazyMapper::Inflection.demodulize(self.name)
         parent_model_name = options.fetch(:class_name, LazyMapper::Inflection.classify(name))
@@ -21,19 +20,14 @@ module LazyMapper
           options
         )
 
-        # TODO: add accessor/mutator to model with class_eval
-
-        relationships
+        relationship
       end
 
       class Proxy < BasicObject
-        def initialize() end
-
         def save
           raise NotImplementedError
         end
-
-      end # class Proxy
-    end # module ManyToMany
-  end # module Associations
-end # module LazyMapper
+      end
+    end
+  end
+end

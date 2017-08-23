@@ -10,26 +10,25 @@ module LazyMapper
         raise ArgumentError, "+options+ should be a Hash, but was #{options.class}", caller unless Hash   === options
 
         relationship =
-          relationships(repository.name)[name] =
-          if options.include?(:through)
-            RelationshipChain.new(child_model_name: options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
-                                  parent_model_name: self.name,
-                                  repository_name: repository.name,
-                                  near_relationship_name: options[:through],
-                                  remote_relationship_name: options.fetch(:remote_name, name),
-                                  parent_key: options[:parent_key],
-                                  child_key: options[:child_key])
-          else
-            # TODO: raise a warning if the other side of the relationship
-            # also has a one_to_one association
-            Relationship.new(
-              LazyMapper::Inflection.underscore(LazyMapper::Inflection.demodulize(self.name)).to_sym,
-              repository.name,
-              options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
-              self.name,
-              options
-            )
-          end
+          relationships(repository.name)[name] = if options.include?(:through)
+                                                   RelationshipChain.new(
+                                                     child_model_name: options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
+                                                     parent_model_name: self.name,
+                                                     repository_name: repository.name,
+                                                     near_relationship_name: options[:through],
+                                                     remote_relationship_name: options.fetch(:remote_name, name),
+                                                     parent_key: options[:parent_key],
+                                                     child_key: options[:child_key]
+                                                   )
+                                                 else
+                                                   Relationship.new(
+                                                     LazyMapper::Inflection.underscore(LazyMapper::Inflection.demodulize(self.name)).to_sym,
+                                                     repository.name,
+                                                     options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
+                                                     self.name,
+                                                     options
+                                                   )
+                                                 end
 
         class_eval <<-EOS, __FILE__, __LINE__
           # FIXME: I think this is a subtle bug.  Since we return the resource directly
@@ -58,7 +57,6 @@ module LazyMapper
 
         relationship
       end
-
-    end # module HasOne
-  end # module Associations
-end # module LazyMapper
+    end
+  end
+end

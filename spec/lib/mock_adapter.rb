@@ -1,35 +1,32 @@
 module LazyMapper
   module Adapters
     class MockAdapter < LazyMapper::Adapters::DefaultAdapter
-
-      def create(repository, instance)
+      def create(_repository, instance)
         instance
       end
 
-      def exists?(storage_name)
+      def exists?(_storage_name)
         true
       end
-
     end
   end
   module Mock
+    def self.logger
+    end
 
-      def self.logger
+    def self.logger=(_value)
+    end
+
+    class Connection
+      def self.acquire(_uri)
+        @connection = self
       end
 
-      def self.logger=(value)
+      def self.close
       end
 
-      class Connection
-        def self.acquire(uri)
-          @connection = self
-        end
-
-        def self.close
-        end
-
-        def self.execute(args)
-        end
+      def self.execute(_args)
       end
+    end
   end
 end

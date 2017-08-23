@@ -1,7 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 describe LazyMapper::Property do
-
   before(:all) do
     class Zoo < LazyMapper::Model
     end
@@ -22,17 +21,17 @@ describe LazyMapper::Property do
     expect(p1.eql?(p3)).to be false
   end
 
-  it "should determine its name"  do
-    expect(LazyMapper::Property.new(Tomato,:botanical_name,String,{}).name).to eq :botanical_name
+  it "should determine its name" do
+    expect(LazyMapper::Property.new(Tomato, :botanical_name, String, {}).name).to eq :botanical_name
   end
 
   it "should determine whether it is a key" do
-    expect(LazyMapper::Property.new(Tomato,:id,Integer,{key: true}).key?).to be true
-    expect(LazyMapper::Property.new(Tomato,:botanical_name,String,{}).key?).to be false
+    expect(LazyMapper::Property.new(Tomato, :id, Integer, {key: true}).key?).to be true
+    expect(LazyMapper::Property.new(Tomato, :botanical_name, String, {}).key?).to be false
   end
 
   it "should return an instance variable name" do
-   expect(LazyMapper::Property.new(Tomato, :flavor, String, {}).instance_variable_name).to eq '@flavor'
+    expect(LazyMapper::Property.new(Tomato, :flavor, String, {}).instance_variable_name).to eq '@flavor'
   end
 
   it "should append ? to TrueClass property reader methods" do
@@ -42,24 +41,17 @@ describe LazyMapper::Property do
       property :public, TrueClass
     end
 
-    expect(Potato.new()).to respond_to(:fresh)
-    expect(Potato.new()).to respond_to(:fresh?)
+    expect(Potato.new).to respond_to(:fresh)
+    expect(Potato.new).to respond_to(:fresh?)
 
     expect(Potato.new(fresh: true)).to be_fresh
 
-    expect(Potato.new()).to respond_to(:public)
-    expect(Potato.new()).to respond_to(:public?)
-  end
-
-  it "should raise an ArgumentError when created with an invalid option" do
-    expect {
-      LazyMapper::Property.new(Tomato,:botanical_name,String,{foo::bar})
-    }.to raise_error(ArgumentError)
+    expect(Potato.new).to respond_to(:public)
+    expect(Potato.new).to respond_to(:public?)
   end
 
   it 'should return the attribute value from a given instance' do
-    class Tomato
-      include LazyMapper::Resource
+    class Tomato < LazyMapper::Model
       property :id, Integer, key: true
     end
 

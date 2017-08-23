@@ -8,29 +8,30 @@ module LazyMapper
       private
 
       def one_to_many(name, options = {})
-        raise ArgumentError, "+name+ should be a Symbol (or Hash for +through+ support), but was #{name.class}", caller     unless Symbol === name || Hash === name
-        raise ArgumentError, "+options+ should be a Hash, but was #{options.class}", caller unless Hash   === options
+        raise ArgumentError, "+name+ should be a Symbol (or Hash for +through+ support), but was #{name.class}", caller unless Symbol === name || Hash === name
+        raise ArgumentError, "+options+ should be a Hash, but was #{options.class}", caller unless Hash === options
 
         relationship =
-          relationships(repository.name)[name] =
-          if options.include?(:through)
-            RelationshipChain.new(child_model_name: options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
-                                  parent_model_name: self.name,
-                                  repository_name: repository.name,
-                                  near_relationship_name: options[:through],
-                                  remote_relationship_name: options.fetch(:remote_name, name),
-                                  parent_key: options[:parent_key],
-                                  child_key: options[:child_key])
-          else
-            relationships(repository.name)[name] =
-              Relationship.new(
-                               LazyMapper::Inflection.underscore(self.name.split('::').last).to_sym,
-                               repository.name,
-                               options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
-                               self.name,
-                               options
-                               )
-          end
+          relationships(repository.name)[name] = if options.include?(:through)
+                                                   RelationshipChain.new(
+                                                     child_model_name: options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
+                                                     parent_model_name: self.name,
+                                                     repository_name: repository.name,
+                                                     near_relationship_name: options[:through],
+                                                     remote_relationship_name: options.fetch(:remote_name, name),
+                                                     parent_key: options[:parent_key],
+                                                     child_key: options[:child_key]
+                                                   )
+                                                 else
+                                                   relationships(repository.name)[name] =
+                                                     Relationship.new(
+                                                       LazyMapper::Inflection.underscore(self.name.split('::').last).to_sym,
+                                                       repository.name,
+                                                       options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
+                                                       self.name,
+                                                       options
+                                                     )
+                                                 end
 
         class_eval <<-EOS, __FILE__, __LINE__
           def #{name}(options={})
@@ -119,12 +120,12 @@ module LazyMapper
           self
         end
 
-        def all(options={})
-          options.empty? ? children : @relationship.get_children(@parent_resource,options,:all)
+        def all(options = {})
+          options.empty? ? children : @relationship.get_children(@parent_resource, options, :all)
         end
 
-        def first(options={})
-          options.empty? ? children.first : @relationship.get_children(@parent_resource,options,:first)
+        def first(options = {})
+          options.empty? ? children.first : @relationship.get_children(@parent_resource, options, :first)
         end
 
         def reload!
@@ -136,9 +137,6 @@ module LazyMapper
         private
 
         def initialize(relationship, parent_resource)
-#          raise ArgumentError, "+relationship+ should be a LazyMapper::Association::Relationship, but was #{relationship.class}", caller unless Relationship === relationship
-#          raise ArgumentError, "+parent_resource+ should be a LazyMapper::Resource, but was #{parent_resource.class}", caller            unless Resource     === parent_resource
-
           @relationship    = relationship
           @parent_resource = parent_resource
           @dirty_children  = []
@@ -154,9 +152,9 @@ module LazyMapper
 
         def add_default_association_values(resources)
           resources.each do |resource|
-            conditions = @relationship.query.reject { |key, value| key == :order }
+            conditions = @relationship.query.reject { |key, _| key == :order }
             conditions.each do |key, value|
-              resource.send("#{key}=", value) if key.class != LazyMapper::Query::Operator && resource.send("#{key}") == nil
+              resource.send("#{key}=", value) if key.class != LazyMapper::Query::Operator && resource.send(key.to_s) == nil
             end
           end
           resources
@@ -188,18 +186,16 @@ module LazyMapper
 
         def save_resources(resources = [])
           ensure_mutable
-        #  repository(@relationship.repository_name) do
             resources.each do |resource|
               @relationship.attach_parent(resource, @parent_resource)
               resource.save
             end
-        #  end
         end
 
         def method_missing(method, *args, &block)
           children.__send__(method, *args, &block)
         end
-      end # class Proxy
-    end # module OneToMany
-  end # module Associations
-end # module LazyMapper
+      end
+    end
+  end
+end

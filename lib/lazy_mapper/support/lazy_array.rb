@@ -1,21 +1,13 @@
-class LazyArray  # borrowed partially from StrokeDB
-
+class LazyArray
   # these methods should return self or nil
-  RETURN_SELF = [ :<<, :clear, :concat, :collect!, :each, :each_index,
-    :each_with_index, :insert, :map!, :push, :reject!, :reverse!,
-    :reverse_each, :replace, :sort!, :unshift ]
+  RETURN_SELF = [ :<<, :clear, :concat, :collect!, :each, :each_index, :each_with_index, :insert, :map!, :push, :reject!, :reverse!, :reverse_each, :replace, :sort!, :unshift ]
 
   # these methods should return an instance of this class when an Array
   # would normally be returned
-  RETURN_NEW = [ :&, :|, :+, :-, :[], :delete_if, :find_all, :first,
-    :grep, :last, :reject, :reverse, :select, :slice, :slice!, :sort,
-    :sort_by, :values_at ]
+  RETURN_NEW = [ :&, :|, :+, :-, :[], :delete_if, :find_all, :first, :grep, :last, :reject, :reverse, :select, :slice, :slice!, :sort, :sort_by, :values_at ]
 
   # these methods should return their results as-is to the caller
-  RETURN_PLAIN = [ :[]=, :all?, :any?, :at, :blank?, :collect, :delete,
-    :delete_at, :detect, :empty?, :entries, :fetch, :find, :include?,
-    :inspect, :index, :inject, :length, :map, :member?, :pop, :rindex,
-    :shift, :size, :to_a, :to_ary, :to_s, :to_set, :zip ]
+  RETURN_PLAIN = [ :[]=, :all?, :any?, :at, :blank?, :collect, :delete, :delete_at, :detect, :empty?, :entries, :fetch, :find, :include?, :inspect, :index, :inject, :length, :map, :member?, :pop, :rindex, :shift, :size, :to_a, :to_ary, :to_s, :to_set, :zip ]
 
   RETURN_SELF.each do |method|
     class_eval <<-EOS, __FILE__, __LINE__
@@ -56,7 +48,7 @@ class LazyArray  # borrowed partially from StrokeDB
     @array.eql?(other.entries)
   end
 
-  alias == eql?
+  alias_method '==', 'eql?'
 
   def load_with(&block)
     @load_with_proc = block

@@ -1,4 +1,4 @@
-#Some useful errors types
+# Some useful errors types
 module LazyMapper
   class ValidationError < StandardError; end
 
@@ -11,11 +11,11 @@ module LazyMapper
   class IncompleteResourceError < StandardError; end
 
   class PersistenceError < StandardError; end
-end # module LazyMapper
+end
 
 class StandardError
   # Displays the specific error message and the backtrace associated with it.
   def display
     "#{message}\n\t#{backtrace.join("\n\t")}"
   end
-end # class StandardError
+end

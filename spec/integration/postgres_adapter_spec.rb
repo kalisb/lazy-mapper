@@ -2,14 +2,13 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 if HAS_POSTGRES
   describe LazyMapper::Adapters::PostgresAdapter do
-      before :all do
-        @adapter = repository(:postgres).adapter
-      end
+    before :all do
+      @adapter = repository(:postgres).adapter
+    end
 
-      describe "auto migrating" do
+    describe "auto migrating" do
       before :all do
         class Sputnik < LazyMapper::Model
-
           property :id, Integer, key: true
           property :name, String
         end
@@ -18,25 +17,23 @@ if HAS_POSTGRES
       it "#upgrade_model should work" do
         @adapter.destroy_model_storage(repository(:postgres), Sputnik)
         expect(@adapter.storage_exists?("sputniks")).to be false
-        Sputnik.auto_migrate!(:postgres)
+        Sputnik.create_table(:postgres)
         expect(@adapter.storage_exists?("sputniks")).to be true
         expect(@adapter.field_exists?("sputniks", "new_prop")).to be false
         Sputnik.property :new_prop, Integer
-        Sputnik.auto_upgrade!(:postgres)
+        Sputnik.update_table(:postgres)
         expect(@adapter.field_exists?("sputniks", "new_prop")).to be true
       end
     end
 
     describe "querying metadata" do
       before :all do
-        class Sputnik
-          include LazyMapper::Resource
-
-          property :id, Integer
+        class Sputnik < LazyMapper::Model
+          property :id, Integer, key: true
           property :name, String
         end
 
-        Sputnik.auto_upgrade!(:postgres)
+        Sputnik.update_table(:postgres)
       end
 
       it "#storage_exists? should return true for tables that exist" do
@@ -55,6 +52,5 @@ if HAS_POSTGRES
         expect(@adapter.field_exists?("sputniks", "plur")).to be false
       end
     end
-
   end
 end

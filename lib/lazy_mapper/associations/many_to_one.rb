@@ -13,10 +13,6 @@ module LazyMapper
 
         relationship = relationships(repository.name)[name] = Relationship.new(
           name,
-
-
-
-
           repository.name,
           self.name,
           parent_model_name,
@@ -70,9 +66,6 @@ module LazyMapper
         private
 
         def initialize(relationship, child_resource)
-#          raise ArgumentError, "+relationship+ should be a LazyMapper::Association::Relationship, but was #{relationship.class}", caller unless Relationship === relationship
-#          raise ArgumentError, "+child_resource+ should be a LazyMapper::Resource, but was #{child_resource.class}", caller              unless Resource     === child_resource
-
           @relationship   = relationship
           @child_resource = child_resource
         end
@@ -84,7 +77,7 @@ module LazyMapper
         def method_missing(method, *args, &block)
           parent.__send__(method, *args, &block)
         end
-      end # class Proxy
-    end # module ManyToOne
-  end # module Associations
-end # module LazyMapper
+      end
+    end
+  end
+end

@@ -1,12 +1,12 @@
 module LazyMapper
   class TypeMap
-
     attr_accessor :parent, :chains
 
     def initialize(parent = nil, &blk)
-      @parent, @chains = parent, {}
+      @parent = parent
+      @chains = {}
 
-      blk.call(self) unless blk.nil?
+      yield self unless blk.nil?
     end
 
     def map(type)
@@ -36,10 +36,14 @@ module LazyMapper
     def lookup_by_type(type)
       raise "TypeMap Exception: type #{type} must have a default primitive or type map entry" unless type.respond_to?(:primitive) && !type.primitive.nil?
 
-      lookup(type.primitive).merge(Type::PROPERTY_OPTIONS.inject({}) {|h, k| h[k] = type.send(k); h})
+      lookup(type.primitive).merge(Type::PROPERTY_OPTIONS.each_with_object({}) do |h, k|
+        h[k] = type.send(k)
+        h
+      end
+                                  )
     end
 
-    alias [] lookup
+    alias_method '[]', 'lookup'
 
     def type_mapped?(type)
       @chains.key?(type) || (@parent.nil? ? false : @parent.type_mapped?(type))

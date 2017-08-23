@@ -4,4 +4,4 @@ module Kernel
   def repository(*args, &block)
     LazyMapper.repository(*args, &block)
   end
-end # module Kernel
+end
