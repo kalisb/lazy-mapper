@@ -44,6 +44,13 @@ module LazyMapper
       relationship
     end
 
+    # A shorthand, clear syntax for defining many-to-one resource relationships.
+    def belongs_to(name, options={})
+      relationship = many_to_one(name, options)
+      self.init_belongs_relationship_for_serialization(relationship) if self.respond_to?(:init_belongs_relationship_for_serialization)
+      relationship
+    end
+
     private
       def extract_throughness(name)
         case name

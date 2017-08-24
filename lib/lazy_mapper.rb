@@ -36,12 +36,10 @@ module LazyMapper
 
   ##
   # Setups up a connection to a data-store
-  def self.setup(name, uri_or_options)
+  def self.establish_connection(name, uri_or_options)
     raise ArgumentError, "+name+ must be a Symbol, but was #{name.class}", caller unless Symbol === name
 
     case uri_or_options
-    when Hash
-      adapter_name = uri_or_options[:adapter]
     when String, Addressable::URI
       uri_or_options = Addressable::URI.parse(uri_or_options) if String === uri_or_options
       adapter_name = uri_or_options.scheme
@@ -50,7 +48,6 @@ module LazyMapper
     end
 
     class_name = LazyMapper::Inflection.classify(adapter_name) + 'Adapter'
-
     Repository.adapters[name] = Adapters.const_get(class_name).new(name, uri_or_options)
   end
 

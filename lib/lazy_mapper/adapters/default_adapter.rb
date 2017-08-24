@@ -62,7 +62,9 @@ module LazyMapper
           query.parameters,
           query.reload?
         )
-        result
+        #result.map do |row|
+        #  LazyMapper.const_get(query.model.to_s).new(row)
+        #end
       end
 
       def update(_repository, resource)
@@ -312,6 +314,7 @@ module LazyMapper
 
           statement << ' FROM ' << quote_table_name(query.model.storage_name(name))
 
+          puts 'Links:' + query.links.to_s
           unless query.links.empty?
             joins = []
             query.links.each do |relationship|
@@ -320,7 +323,6 @@ module LazyMapper
               child_model_name  = child_model.storage_name(name)
               parent_model_name = parent_model.storage_name(name)
               child_keys        = relationship.child_key.to_a
-
               # We only do LEFT OUTER JOIN for now
               s = ' LEFT OUTER JOIN '
               s << quote_table_name(parent_model_name) << ' ON '

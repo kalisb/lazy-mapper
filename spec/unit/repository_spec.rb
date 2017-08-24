@@ -36,7 +36,6 @@ describe LazyMapper::Repository do
   end
 
   it "should provide persistance methods" do
-    expect(@repository).to respond_to(:get)
     expect(@repository).to respond_to(:first)
     expect(@repository).to respond_to(:all)
     expect(@repository).to respond_to(:save)

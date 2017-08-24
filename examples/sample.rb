@@ -1,25 +1,11 @@
 require 'pathname'
 require Pathname(__FILE__).dirname.expand_path.parent + 'lib/lazy_mapper'
 
-# Да се поддържа работа с поне 2 релационни бази от данни по
-# ваш избор - например SQLite и PostgreSQL. Можете да използвате
-# gem-ове като sqlite3 за комуникация със съответната база от данни.
-# Нямате право да използвате наготово ORM библиотеки.
-LazyMapper.setup(:default, 'sqlite3:test.db')
-LazyMapper.setup(:default, 'postgres://postgres:test@localhost/postgres')
-@adapter = repository(:default).adapter
-
-# Възможност за логване на направените към базата
-# от данни заявки. Този лог трябва да е конфигурируем по следния начин:
-# Дали да логва на стандартния изход или във файл.
-# Лог записи на различни нива - DEBUG, INFO, ERROR.
-# Минимално ниво на лог записите, които да се виждат в лога.
-LazyMapper::Logger.new($stdout, :info)
-
 class Article < LazyMapper::Model
   property :id, Integer, serial: true
   property :title, String
   property :body,  String
+  belongs_to :authors
 end
 
 class Author < LazyMapper::Model
@@ -34,8 +20,6 @@ end
 puts '-----------------------------------------------------'
 Author.create_table(:default)
 Article.create_table(:default)
-puts "Created table article: " + @adapter.storage_exists?("articles").to_s
-puts "Created table author: " + @adapter.storage_exists?("authors").to_s
 puts '-----------------------------------------------------'
 
 # Създаване, четене, изтриване и ъпдейт (CRUD)

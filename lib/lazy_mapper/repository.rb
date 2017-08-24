@@ -29,13 +29,6 @@ module LazyMapper
     end
 
     ##
-    # retrieve a specific instance by key
-    def get(model, options)
-      query = Query.new(self, model, options)
-      adapter.read_set(self, query)
-    end
-
-    ##
     # retrieve a singular instance by query
     def first(model, options)
       query = if current_scope = model.send(:current_scope)

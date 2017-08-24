@@ -10,11 +10,11 @@ RSpec.configure do |config|
 end
 # setup mock adapters
 [ :default ].each do |repository_name|
-  LazyMapper.setup(repository_name, "mock://localhost/#{repository_name}")
+  LazyMapper.establish_connection(repository_name, "mock://localhost/#{repository_name}")
 end
 
 def setup_adapter(name, default_uri)
-  LazyMapper.setup(name, ENV["#{name.to_s.upcase}_SPEC_URI"] || default_uri)
+  LazyMapper.establish_connection(name, ENV["#{name.to_s.upcase}_SPEC_URI"] || default_uri)
   Object.const_set('ADAPTER', ENV['ADAPTER'].to_sym) if name.to_s == ENV['ADAPTER']
   true
 end
