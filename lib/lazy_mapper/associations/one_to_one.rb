@@ -9,32 +9,15 @@ module LazyMapper
         raise ArgumentError, "+name+ should be a Symbol, but was #{name.class}", caller     unless Symbol === name
         raise ArgumentError, "+options+ should be a Hash, but was #{options.class}", caller unless Hash   === options
 
-        relationship =
-          relationships(repository.name)[name] = if options.include?(:through)
-                                                   RelationshipChain.new(
-                                                     child_model_name: options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
-                                                     parent_model_name: self.name,
-                                                     repository_name: repository.name,
-                                                     near_relationship_name: options[:through],
-                                                     remote_relationship_name: options.fetch(:remote_name, name),
-                                                     parent_key: options[:parent_key],
-                                                     child_key: options[:child_key]
-                                                   )
-                                                 else
-                                                   Relationship.new(
-                                                     LazyMapper::Inflection.underscore(LazyMapper::Inflection.demodulize(self.name)).to_sym,
-                                                     repository.name,
-                                                     options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
-                                                     self.name,
-                                                     options
-                                                   )
-                                                 end
+        relationship = relationships(repository.name)[name] = Relationship.new(
+          LazyMapper::Inflection.underscore(LazyMapper::Inflection.demodulize(self.name)).to_sym,
+          repository.name,
+          options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
+          self.name,
+          options
+        )
 
         class_eval <<-EOS, __FILE__, __LINE__
-          # FIXME: I think this is a subtle bug.  Since we return the resource directly
-          # and not the proxy, then the proxy methods (like save) won't be fired off
-          # as needed.  To fix this we may need a subclass of OneToMany that returns
-          # a proxy object with just a single entry.
           def #{name}
             #{name}_association.first
           end

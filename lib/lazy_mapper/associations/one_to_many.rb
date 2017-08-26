@@ -11,27 +11,13 @@ module LazyMapper
         raise ArgumentError, "+name+ should be a Symbol (or Hash for +through+ support), but was #{name.class}", caller unless Symbol === name || Hash === name
         raise ArgumentError, "+options+ should be a Hash, but was #{options.class}", caller unless Hash === options
 
-        relationship =
-          relationships(repository.name)[name] = if options.include?(:through)
-                                                   RelationshipChain.new(
-                                                     child_model_name: options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
-                                                     parent_model_name: self.name,
-                                                     repository_name: repository.name,
-                                                     near_relationship_name: options[:through],
-                                                     remote_relationship_name: options.fetch(:remote_name, name),
-                                                     parent_key: options[:parent_key],
-                                                     child_key: options[:child_key]
-                                                   )
-                                                 else
-                                                   relationships(repository.name)[name] =
-                                                     Relationship.new(
-                                                       LazyMapper::Inflection.underscore(self.name.split('::').last).to_sym,
-                                                       repository.name,
-                                                       options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
-                                                       self.name,
-                                                       options
-                                                     )
-                                                 end
+        relationship = relationships(repository.name)[name] = relationships(repository.name)[name] = Relationship.new(
+          LazyMapper::Inflection.underscore(self.name.split('::').last).to_sym,
+          repository.name,
+          options.fetch(:class_name, LazyMapper::Inflection.classify(name)),
+          self.name,
+          options
+        )
 
         class_eval <<-EOS, __FILE__, __LINE__
           def #{name}(options={})
@@ -79,14 +65,6 @@ module LazyMapper
         end
 
         def <<(resource)
-          #
-          # The order here is of the essence.
-          #
-          # self.append_resource used to be called before children.<<, which created weird errors
-          # where the resource was appended in the db before it was appended onto the @children
-          # structure, that was just read from the database, and therefore suddenly had two
-          # elements instead of one after the first addition.
-          #
           children << resource
           append_resource([ resource ])
           self
@@ -147,7 +125,6 @@ module LazyMapper
         end
 
         def ensure_mutable
-          raise ImmutableAssociationError, "You can not modify this assocation" if RelationshipChain === @relationship
         end
 
         def add_default_association_values(resources)

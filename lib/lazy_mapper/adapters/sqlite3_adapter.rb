@@ -4,7 +4,6 @@ module LazyMapper
     class Sqlite3Adapter < DefaultAdapter
       # TypeMap for SQLite 3 databases.
       #
-      # @return <LazyMapper::TypeMap> default TypeMap for SQLite 3 databases.
       def self.type_map
         @type_map ||= TypeMap.new(super) do |tm|
           tm.map(Integer).to('INTEGER')

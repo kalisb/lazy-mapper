@@ -38,12 +38,6 @@ class LazyArray
     EOS
   end
 
-  def partition(&block)
-    lazy_load!
-    true_results, false_results = @array.partition(&block)
-    [ wrap(true_results), wrap(false_results) ]
-  end
-
   def eql?(other)
     @array.eql?(other.entries)
   end

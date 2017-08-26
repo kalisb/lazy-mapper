@@ -59,10 +59,6 @@ module LazyMapper
       property
     end
 
-    def repositories
-      [repository] + @properties.keys.collect { |repository_name| LazyMapper.repository(repository_name) }
-    end
-
     def properties(repository_name = default_repository_name)
       @properties[repository_name]
     end
@@ -71,27 +67,16 @@ module LazyMapper
       @properties[repository_name].key
     end
 
-    ##
-    #
-    # @see Repository#get
     def where(options = {})
       releation = LazyMapper::Relation.new(repository, self, options)
       releation
     end
 
     ##
-    #
-    # @see Resource#get
-    # @raise <ObjectNotFoundError> "could not find .... with key: ...."
-    def [](key)
-      get(key) || raise(ObjectNotFoundError, "Could not find #{self.name} with key: #{key.inspect}")
-    end
-
-    ##
     # Create an instance of Model with the given attributes
     ##
     def create(attributes = {})
-      resource = self.new
+      resource = self.new(attributes)
       attributes.each do |key, value|
         resource.send(:instance_variable_set, "@#{key}", value)
       end
@@ -147,61 +132,33 @@ module LazyMapper
 
     def min(*args)
       with_repository_and_property(*args) do |repository, property, options|
-        check_property_is_number(property)
         repository.min(self, property, options)
       end
     end
 
    def max(*args)
      with_repository_and_property(*args) do |repository, property, options|
-       check_property_is_number(property)
        repository.max(self, property, options)
      end
    end
 
   def avg(*args)
     with_repository_and_property(*args) do |repository, property, options|
-      check_property_is_number(property)
       repository.avg(self, property, options)
     end
   end
 
   def sum(*args)
     with_repository_and_property(*args) do |repository, property, options|
-      check_property_is_number(property)
       repository.sum(self, property, options)
     end
   end
 
-    # TODO SPEC
-    def copy(source, destination, options = {})
-      repository(destination) do
-        repository(source).all(self, options).each do |resource|
-          self.create(resource)
-        end
-      end
-    end
-
-    #
-    # Produce a new Transaction for this Resource class
-    #
-    # @return <LazyMapper::Adapters::Transaction
-    #   a new LazyMapper::Adapters::Transaction with all LazyMapper::Repositories
-    #   of the class of this LazyMapper::Resource added.
-    #-
-    # @api public
-    #
-    # TODO: move to dm-more/dm-transactions
-    def transaction(&block)
-      LazyMapper::Transaction.new(self, &block)
-    end
-
-    def storage_exists?(repository_name = default_repository_name)
-      repository(repository_name).storage_exists?(storage_name(repository_name))
-    end
+  def storage_exists?(repository_name = default_repository_name)
+    repository(repository_name).storage_exists?(storage_name(repository_name))
+  end
 
     private
-
     def default_storage_name
       self.name
     end
@@ -229,16 +186,6 @@ module LazyMapper
       model.extend LazyMapper::ClassMethods
     end
 
-    ##
-    # Return all classes that include the LazyMapper::Resource module
-    #
-    # @return <Set> a set containing the including classes
-    # -
-    # @api semipublic
-    def descendents
-      @@descendents
-    end
-
     # +---------------
     # Instance methods
 
@@ -246,9 +193,6 @@ module LazyMapper
 
     ##
     # returns the value of the attribute, invoking defaults if necessary
-    #
-    # @param <Symbol> name attribute to lookup
-    # @return <Types> the value stored at that given attribute, nil if none, and default if necessary
     def attribute_get(name)
       property  = self.class.properties(repository.name)[name]
       ivar_name = property.instance_variable_name
@@ -268,9 +212,6 @@ module LazyMapper
 
     ##
     # sets the value of the attribute, marks the attribute as dirty so that it may be saved
-    #
-    # @param <Symbol> name property to set
-    # @param <Type> value value to store at that location
     def attribute_set(name, value)
       property  = self.class.properties(repository.name)[name]
       ivar_name = property.instance_variable_name
@@ -297,21 +238,6 @@ module LazyMapper
       "#<#{self.class.name} #{attrs.join(" ")}>"
     end
 
-    def pretty_print(pp)
-      attrs = attributes.inject([]) { |s, (k, v)| s << [k, v] }
-      pp.group(1, "#<#{self.class.name}", ">") do
-        pp.breakable
-        pp.seplist(attrs) do |k_v|
-          pp.text k_v[0].to_s
-          pp.text " = "
-          pp.pp k_v[1]
-        end
-      end
-    end
-
-    ##
-    #
-    # @return <Repository> the respository this resource belongs to in the context of a collection OR in the class's context
     def repository
       @collection ? @collection.repository : self.class.repository
     end
@@ -324,17 +250,6 @@ module LazyMapper
       @parent_associations ||= []
     end
 
-    ##
-    # default id method to return the resource id when there is a
-    # single key, and the model was defined with a primary key named
-    # something other than id
-    #
-    def id
-      key = self.key
-      key.first if key.size == 1
-    end
-
-    # FIXME: should this take a repository_name argument
     def key
       key = []
       self.class.key(repository.name).each do |property|
@@ -344,27 +259,14 @@ module LazyMapper
       key
     end
 
-    def readonly!
-      @readonly = true
-    end
-
-    def readonly?
-      @readonly == true
-    end
-
     ##
     # save the instance to the data-store
-    #
-    # @return <True, False> results of the save
-    # @see LazyMapper::Repository#save
     def save
       new_record? ? create : update
     end
 
     ##
     # destroy the instance, remove it from the repository
-    #
-    # @return <True, False> results of the destruction
     def destroy
       repository.destroy(self)
     end
@@ -395,16 +297,11 @@ module LazyMapper
       dirty_attributes.include?(property)
     end
 
-    def shadow_attribute_get(name)
-      instance_variable_get("@shadow_#{name}")
-    end
-
     def reload
       @collection.reload(fields: loaded_attributes)
       (parent_associations + child_associations).each { |association| association.reload! }
       self
     end
-    alias_method 'reload!', 'reload'
 
     def reload_attributes(*attributes)
       @collection.reload(fields: attributes)
@@ -413,9 +310,6 @@ module LazyMapper
 
     ##
     # Returns <tt>true</tt> if this model hasn't been saved to the database,
-    # <tt>false</tt> otherwise.
-    #
-    # @return <TrueClass> if this model has been saved to the database
     def new_record?
       !defined?(@new_record) || @new_record
     end
@@ -439,13 +333,6 @@ module LazyMapper
     end
 
     # Updates attributes and saves model
-    #
-    # @param attributes<Hash> Attributes to be updated
-    # @param keys<Symbol, String, Array> keys of Hash to update (others won't be updated)
-    #
-    # @return <TrueClass, FalseClass> if model got saved or not
-    #-
-    # @api public
     def update_attributes(hash, *update_only)
       raise 'Update takes a hash as first parameter' unless hash.is_a?(Hash)
       loop_thru = update_only.empty? ? hash.keys : update_only
@@ -485,23 +372,6 @@ module LazyMapper
     def lazy_load(name)
       return unless @collection
       @collection.reload(fields: self.class.properties(repository.name).lazy_load_context(name))
-    end
-
-    def private_attributes
-      pairs = {}
-
-      self.class.properties(repository.name).each do |property|
-        pairs[property.name] = send(property.getter)
-      end
-
-      pairs
-    end
-
-    def private_attributes=(values_hash)
-      values_hash.each_pair do |k, v|
-        setter = "#{k.to_s.sub(/\?\z/, '')}="
-        send(setter, v) if respond_to?(setter)
-      end
     end
   end
 end

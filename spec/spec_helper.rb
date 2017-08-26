@@ -3,7 +3,7 @@ require 'simplecov'
 SimpleCov.start
 
 require Pathname(__FILE__).dirname.expand_path.parent + 'lib/lazy_mapper'
-require LazyMapper.root / 'spec' / 'lib' / 'mock_adapter'
+require Pathname(__FILE__).dirname.expand_path.parent + 'spec/lib/mock_adapter'
 
 RSpec.configure do |config|
   config.raise_errors_for_deprecations!

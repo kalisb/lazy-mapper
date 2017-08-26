@@ -38,21 +38,6 @@ module LazyMapper
         true
       end
 
-      def read(repository, model, bind_values)
-        properties = model.properties(name).defaults
-
-        properties_with_indexes = Hash[*properties.zip((0...properties.length).to_a).flatten]
-
-        key = model.key(name)
-        set = Collection.new(repository, model, properties_with_indexes)
-
-        statement = read_statement(model, properties, key)
-        puts bind_values
-        with_connection do
-          execute(statement, *bind_values).each { |row| set << row }
-        end
-      end
-
       def read_set(repository, query)
         result = read_set_with_sql(
           repository,
@@ -62,9 +47,19 @@ module LazyMapper
           query.parameters,
           query.reload?
         )
-        #result.map do |row|
-        #  LazyMapper.const_get(query.model.to_s).new(row)
-        #end
+        result.map do |row|
+          if row.is_a? Array
+            hash = {}
+            query.fields.each { |prop| hash[prop.name] = '' }
+            index = 0
+            hash.each do |key, _|
+              hash[key] = row[index]
+              index += 1
+            end
+            row = hash
+          end
+          LazyMapper.const_get(query.model.to_s).new(row) if row.is_a? Hash
+        end
       end
 
       def update(_repository, resource)
@@ -128,10 +123,6 @@ module LazyMapper
         execute(drop_table_statement(model))
       end
 
-      def transaction_primitive
-        LazyMapper::Transaction.create_for_uri(@uri)
-      end
-
       def count(_repository, property, query)
         parameters = query.parameters
         execute(aggregate_value_statement(:count, property, query), *parameters).affected_rows.first
@@ -139,26 +130,22 @@ module LazyMapper
 
       def min(_respository, property, query)
         parameters = query.parameters
-        min = query(aggregate_value_statement(:min, property, query), *parameters).first
-        property.typecast(min)
+        execute(aggregate_value_statement(:min, property, query), *parameters).affected_rows[0]
       end
 
      def max(_respository, property, query)
        parameters = query.parameters
-       max = query(aggregate_value_statement(:max, property, query), *parameters).first
-       property.typecast(max)
+       execute(aggregate_value_statement(:max, property, query), *parameters).affected_rows[0]
      end
 
      def avg(_respository, property, query)
        parameters = query.parameters
-       avg = query(aggregate_value_statement(:avg, property, query), *parameters).first
-       property.type == Integer ? avg.to_f : property.typecast(avg)
+       execute(aggregate_value_statement(:avg, property, query), *parameters).affected_rows[0]
      end
 
      def sum(_respository, property, query)
        parameters = query.parameters
-       sum = query(aggregate_value_statement(:sum, property, query), *parameters).first
-       property.typecast(sum)
+       execute(aggregate_value_statement(:sum, property, query), *parameters).affected_rows[0]
      end
 
       protected
@@ -314,7 +301,6 @@ module LazyMapper
 
           statement << ' FROM ' << quote_table_name(query.model.storage_name(name))
 
-          puts 'Links:' + query.links.to_s
           unless query.links.empty?
             joins = []
             query.links.each do |relationship|
@@ -435,33 +421,6 @@ module LazyMapper
           "\"#{column_name.gsub('"', '""')}\""
         end
 
-        # TODO: once the driver's quoting methods become public, have
-        # this method delegate to them instead
-        def quote_column_value(column_value)
-          return 'NULL' if column_value.nil?
-
-          case column_value
-          when String
-            if (integer = column_value.to_i).to_s == column_value
-              quote_column_value(integer)
-            else
-              "'#{column_value.gsub("'", "''")}'"
-            end
-          when DateTime
-            quote_column_value(column_value.strftime('%Y-%m-%d %H:%M:%S'))
-          when Date
-            quote_column_value(column_value.strftime('%Y-%m-%d'))
-          when Time
-            quote_column_value(column_value.strftime('%Y-%m-%d %H:%M:%S') + ((column_value.usec > 0 ? ".#{column_value.usec.to_s.rjust(6, '0')}" : '')))
-          when Integer, Float
-            column_value.to_s
-          when BigDecimal
-            column_value.to_s('F')
-          else
-            column_value.to_s
-          end
-        end
-
         # Adapters that support AUTO INCREMENT fields for CREATE TABLE
         # statements should overwrite this to return true
         def supports_serial?
@@ -486,22 +445,6 @@ module LazyMapper
 
         def drop_table_statement(model)
           "DROP TABLE IF EXISTS #{model.storage_name(name)}"
-        end
-
-        def create_index_statements(model)
-          table_name = model.storage_name(name)
-          model.properties.indexes.collect do |index_name, properties|
-            "CREATE INDEX #{quote_column_name('index_' + table_name + '_' + index_name)} ON " \
-            "#{quote_table_name(table_name)} (#{properties.collect { |p| quote_column_name(p) }.join ','})"
-          end
-        end
-
-        def create_unique_index_statements(model)
-          table_name = model.storage_name(name)
-          model.properties.unique_indexes.collect do |index_name, properties|
-            "CREATE UNIQUE INDEX #{quote_column_name('unique_index_' + table_name + '_' + index_name)} ON " \
-            "#{quote_table_name(table_name)} (#{properties.collect { |p| quote_column_name(p) }.join ','})"
-          end
         end
 
         def property_schema_hash(property, _model)

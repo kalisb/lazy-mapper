@@ -1,7 +1,7 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 class Article < LazyMapper::Model
-  property :id,         Integer, :serial => true
+  property :id,         Integer, serial: true
   property :blog_id,    Integer
   property :created_at, DateTime
   property :author,     String
@@ -21,16 +21,16 @@ GOOD_OPTIONS = [
 
 describe LazyMapper::Query do
   describe 'should set the attribute' do
-   it '#model with model' do
-     query = LazyMapper::Query.new(repository(:mock), Article)
-     expect(query.model).to eq Article
-   end
+    it '#model with model' do
+      query = LazyMapper::Query.new(repository(:mock), Article)
+      expect(query.model).to eq Article
+    end
 
-   GOOD_OPTIONS.each do |(attribute,value)|
+   GOOD_OPTIONS.each do |(attribute, value)|
      it "##{attribute} with options[:#{attribute}] if it is #{value.inspect}" do
        query = LazyMapper::Query.new(repository(:mock), Article, attribute => value)
        expect(query.send(attribute)).to eq value
      end
    end
- end
+  end
 end

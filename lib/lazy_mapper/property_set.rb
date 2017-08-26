@@ -127,15 +127,5 @@ module LazyMapper
     def lazy_contexts
       @lazy_contexts ||= Hash.new { |h, context| h[context] = [] }
     end
-
-    def parse_index(index, property, index_hash)
-      case index
-      when true then index_hash[property] = [property]
-      when Symbol
-        index_hash[index.to_s] ||= []
-        index_hash[index.to_s] << property
-      when Array then index.each { |idx| parse_index(idx, property, index_hash) }
-      end
-    end
   end
 end

@@ -1,9 +1,6 @@
 dir = Pathname(__FILE__).dirname.expand_path / 'associations'
 
 require dir / 'relationship'
-require dir / 'relationship_chain'
-require dir / 'many_to_many'
-require dir / 'many_to_one'
 require dir / 'one_to_many'
 require dir / 'one_to_one'
 
@@ -12,9 +9,7 @@ module LazyMapper
     class ImmutableAssociationError < RuntimeError
     end
 
-    include ManyToOne
     include OneToMany
-    include ManyToMany
     include OneToOne
 
     def relationships(repository_name = default_repository_name)
@@ -27,9 +22,7 @@ module LazyMapper
     end
 
     #
-    # A shorthand, clear syntax for defining one-to-one, one-to-many and
-    # many-to-many resource relationships.
-    #
+    # A shorthand, clear syntax for defining one-to-one, one-to-many 
     def has(cardinality, name, options = {})
       options = options.merge(extract_min_max(cardinality))
       options = options.merge(extract_throughness(name))
@@ -41,13 +34,6 @@ module LazyMapper
                      else
                        one_to_many(options.delete(:name), options)
                      end
-      relationship
-    end
-
-    # A shorthand, clear syntax for defining many-to-one resource relationships.
-    def belongs_to(name, options={})
-      relationship = many_to_one(name, options)
-      self.init_belongs_relationship_for_serialization(relationship) if self.respond_to?(:init_belongs_relationship_for_serialization)
       relationship
     end
 

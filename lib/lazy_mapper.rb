@@ -1,6 +1,4 @@
 # This file begins the loading sequence.
-
-# Require the basics...
 require 'addressable/uri'
 
 dir = Pathname(__FILE__).dirname.expand_path / 'lazy_mapper'
@@ -17,7 +15,6 @@ require dir / 'query'
 require dir / 'repository'
 require dir / 'model'
 require dir / 'relation'
-require dir / 'scope'
 require dir / 'support'
 require dir / 'property'
 require dir / 'adapters'
@@ -26,16 +23,11 @@ require dir / 'version'
 
 ##
 # LazyMapper uses URIs to connect to your data-store.
-# URI connections takes the form of:
-#   LazyMapper.setup(:default, 'protocol://username:password@localhost:port/path/to/repo')
 #
 module LazyMapper
-  def self.root
-    @root ||= Pathname(__FILE__).dirname.parent.expand_path
-  end
-
   ##
   # Setups up a connection to a data-store
+  #
   def self.establish_connection(name, uri_or_options)
     raise ArgumentError, "+name+ must be a Symbol, but was #{name.class}", caller unless Symbol === name
 
@@ -80,8 +72,4 @@ module LazyMapper
 
   # A logger should always be present.
   Logger.new(nil, :fatal)
-
-  def self.prepare(*args)
-    yield repository(*args)
-  end
 end

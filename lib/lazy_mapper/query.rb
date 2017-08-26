@@ -3,17 +3,6 @@ module LazyMapper
     class Direction
       attr_reader :property, :direction
 
-      def ==(other)
-        return true if super
-        hash == other.hash
-      end
-
-      alias_method 'eql?', '=='
-
-      def hash
-        @property.hash + @direction.hash
-      end
-
       private
 
       def initialize(property, direction = :asc)
@@ -28,10 +17,6 @@ module LazyMapper
     class Operator
       attr_reader :target, :operator
 
-      def to_sym
-        @property_name
-      end
-
       private
 
       def initialize(target, operator)
@@ -41,55 +26,6 @@ module LazyMapper
 
         @target     = target
         @operator   = operator
-      end
-    end
-
-    class Path
-      attr_reader :relationships, :model, :property, :operator
-
-      def initialize(repository, relationships, model, property_name = nil)
-        raise ArgumentError, "+repository+ is not a Repository, but was #{repository.class}", caller unless Repository === repository
-        raise ArgumentError, "+relationships+ is not an Array, it is a #{relationships.class}", caller unless Array === relationships
-        raise ArgumentError, "+model+ is not a Model, it is a #{model}", caller unless model.ancestors.include?(Model)
-        raise ArgumentError, "+property_name+ is not a Symbol, it is a #{property_name.class}", caller unless Symbol === property_name || property_name.nil?
-
-        @repository    = repository
-        @relationships = relationships
-        @model         = model
-        @property      = @model.properties(@repository.name)[property_name] if property_name
-      end
-
-      [:gt, :gte, :lt, :lte, :not, :eql, :like, :in].each do |sym|
-        self.class_eval <<-RUBY
-          def #{sym}
-            Operator.new(self, :#{sym})
-          end
-        RUBY
-      end
-
-      def method_missing(method, *args)
-        if relationship = @model.relationships(@repository.name)[method]
-          clazz = if @model == relationship.child_model
-                    relationship.parent_model
-                  else
-                    relationship.child_model
-                  end
-          relations = []
-          relations.concat(@relationships)
-          relations << relationship
-          return Query::Path.new(@repository, relations, clazz)
-        end
-
-        if @model.properties(@model.repository.name)[method]
-          @property = @model.properties(@model.repository.name)[method]
-          return self
-        end
-        super
-      end
-
-      # duck type the DM::Query::Path to act like a DM::Property
-      def field(*args)
-        @property ? @property.field(*args) : nil
       end
     end
 
@@ -123,23 +59,6 @@ module LazyMapper
       self
     end
 
-    def merge(other)
-      self.dup.update(other)
-    end
-
-    def ==(other)
-      return true if super
-      @model    == other.model    &&
-      @reload   == other.reload   &&
-      @offset   == other.offset   &&
-      @limit    == other.limit    &&
-      @order    == other.order    &&
-      @fields   == other.fields   &&
-      @links    == other.links    &&
-      @includes == other.includes &&
-      @conditions.sort_by { |c| c.at(0).hash + c.at(1).hash + c.at(2).hash } == other.conditions.sort_by { |c| c.at(0).hash + c.at(1).hash + c.at(2).hash }
-    end
-
     alias_method 'eql?', '=='
 
     def parameters
@@ -156,42 +75,7 @@ module LazyMapper
       parameters
     end
 
-    # find the point in self.conditions where the sub select tuple is
-    # located. Delete the tuple and add value.conditions. value must be a
-    # <DM::Query>
-    #
-    def merge_sub_select_conditions(operator, property, value)
-      raise ArgumentError, "+value+ is not a #{self.class}, but was #{value.class}", caller unless self.class === value
-
-      new_conditions = []
-      conditions.each do |tuple|
-        if tuple.at(0).to_s == operator.to_s && tuple.at(1) == property && tuple.at(2) == value
-          value.conditions.each do |sub_select_tuple|
-            new_conditions << sub_select_tuple
-          end
-        else
-          new_conditions << tuple
-        end
-      end
-      @conditions = new_conditions
-    end
-
     alias_method 'reload?', 'reload'
-
-    def inspect
-      attrs = [
-        [ :repository, @repository.name ],
-        [ :model,      model ],
-        [ :fields,     fields ],
-        [ :links,      links ],
-        [ :conditions, conditions ],
-        [ :order,      order ],
-        [ :limit,      limit ],
-        [ :offset,     offset ],
-      ]
-
-      "#<#{self.class.name} #{attrs.map { |(k, v)| "@#{k}=#{v.inspect}" } * ' '}>"
-    end
 
     private
 
@@ -220,31 +104,10 @@ module LazyMapper
       normalize_order
       normalize_fields
 
-      # normalize links and includes.
-      normalize_links
-      normalize_includes
-
       # treat all non-options as conditions
       (options.keys - OPTIONS - OPTIONS.map(&:to_s)).each do |k|
         append_condition(k, options[k])
       end
-
-      # parse raw options[:conditions] differently
-      if conditions = options[:conditions]
-        if conditions.is_a?(Array)
-          raw_query, *bind_values = conditions
-          @conditions << if bind_values.empty?
-                           [ :raw, raw_query ]
-                         else
-                           [ :raw, raw_query, bind_values ]
-                         end
-        end
-      end
-    end
-
-    def initialize_copy(original)
-      # deep-copy the condition tuples when copying the object
-      @conditions = original.conditions.map { |tuple| tuple.dup }
     end
 
     # validate the model
@@ -278,17 +141,7 @@ module LazyMapper
       end
     end
 
-    # TODO: spec this
-    # validate other DM::Query or Hash object
-    def validate_other(other)
-      if self.class === other
-        raise ArgumentError, "+other+ #{self.class} must belong to the same repository" unless other.repository == @repository
-      elsif !(Hash === other)
-        raise ArgumentError, "+other+ must be a #{self.class} or Hash, but was a #{other.class}"
-      end
-    end
-
-    # normalize order elements to DM::Query::Direction
+    # normalize order elements
     def normalize_order
       @order = @order.map do |order_by|
         case order_by
@@ -309,7 +162,7 @@ module LazyMapper
       end
     end
 
-    # normalize fields to DM::Property
+    # normalize fields
     def normalize_fields
       @fields = @fields.map do |field|
         case field
@@ -325,49 +178,11 @@ module LazyMapper
       end
     end
 
-    # normalize links to DM::Query::Path
-    def normalize_links
-      # XXX: this should normalize to DM::Query::Path, not DM::Association::Relationship
-      # because a link may be more than one-hop-away from the source.  A DM::Query::Path
-      # should include an Array of Relationship objects that trace the "path" between
-      # the source and the target.
-      @links = @links.map do |link|
-        case link
-        when Associations::Relationship
-          link
-        when Symbol, String
-          link = link.to_sym if String === link
-          raise ArgumentError, "+options[:links]+ entry #{link} does not map to a LazyMapper::Associations::Relationship" unless model.relationships(@repository.name).key?(link)
-          model.relationships(@repository.name)[link]
-        else
-          raise ArgumentError, "+options[:links]+ entry #{link.inspect} not supported"
-        end
-      end
-    end
-
-    # normalize includes to DM::Query::Path
-    def normalize_includes
-      # TODO: normalize Array of Symbol, String, DM::Property 1-jump-away or DM::Query::Path
-      # NOTE: :includes can only be and array of DM::Query::Path objects now. This method
-      #       can go away after review of what has been done.
-    end
-
-    # validate that all the links or includes are present for the given DM::Query::Path
-    #
-    def validate_query_path_links(path)
-      path.relationships.map do |relationship|
-        @links << relationship unless @links.include?(relationship) || @includes.include?(relationship)
-      end
-    end
-
     def append_condition(clause, bind_value)
       operator = :eql
       bind_value = bind_value.call if bind_value.is_a?(Proc)
       property = case clause
                  when Property
-                   clause
-                 when Query::Path
-                   validate_query_path_links(clause)
                    clause
                  when Operator
                    operator = clause.operator
@@ -397,7 +212,7 @@ module LazyMapper
       @conditions << [ operator, property, bind_value ]
     end
 
-    def update_conditions(other)
+    def update_conditions(*)
       # build an index of conditions by the property and operator to
       # avoid nested looping
       conditions_index = Hash.new { |h, k| h[k] = {} }
@@ -405,30 +220,6 @@ module LazyMapper
         operator, property = *condition
         next if :raw == operator
         conditions_index[property][operator] = condition
-      end
-
-      # loop over each of the other's conditions, and overwrite the
-      # conditions when in conflict
-      other.conditions.each do |other_condition|
-        other_operator, other_property, other_bind_value = *other_condition
-
-        unless :raw == other_operator
-          if condition = conditions_index[other_property][other_operator]
-            operator, _, bind_value = *condition
-
-            # overwrite the bind value in the existing condition
-            condition[2] = case operator
-                           when :eql, :like then other_bind_value
-                           when :gt,  :gte  then [ bind_value, other_bind_value ].min
-                           when :lt,  :lte  then [ bind_value, other_bind_value ].max
-                           when :not, :in   then Array(bind_value) | Array(other_bind_value)
-                           end
-            next
-          end
-        end
-
-        # otherwise append the other condition
-        @conditions << other_condition.dup
       end
     end
   end

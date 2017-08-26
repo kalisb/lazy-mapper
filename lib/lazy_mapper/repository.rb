@@ -31,12 +31,7 @@ module LazyMapper
     ##
     # retrieve a singular instance by query
     def first(model, options)
-      query = if current_scope = model.send(:current_scope)
-                current_scope.merge(options.merge(limit: 1))
-              else
-                Query.new(self, model, options.merge(limit: 1))
-              end
-
+      query = Query.new(self, model, options.merge(limit: 1))
       adapter.read_set(self, query).first
     end
 
@@ -108,10 +103,7 @@ module LazyMapper
     end
 
     ##
-    # removes the resource from the data-store.  The instance will remain in active-memory, but will now be marked as a new_record and it's keys will be revoked
-    #
-    # @param <Class> resource the resource to be destroyed
-    # @return <True, False> results of the destruction
+    # removes the resource
     def destroy(resource)
       if adapter.delete(self, resource)
         identity_maps[resource.class].delete(resource.key)
@@ -139,13 +131,10 @@ module LazyMapper
     end
 
     ##
-    #
-    # @return <True, False> whether or not the data-store exists for this repo
+    # whether or not the data-store exists for this repo
     def storage_exists?(storage_name)
       adapter.storage_exists?(storage_name)
     end
-
-    alias_method 'exists?', 'storage_exists?'
 
     private
 
@@ -158,11 +147,7 @@ module LazyMapper
     end
 
     def scoped_query(model, options)
-      if current_scope = model.send(:current_scope)
-        current_scope.merge(options)
-      else
-        Query.new(self, model, options)
-      end
+      Query.new(self, model, options)
     end
   end
 end

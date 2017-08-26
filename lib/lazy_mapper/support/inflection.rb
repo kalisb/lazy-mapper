@@ -1,11 +1,3 @@
-# The original of this file was copied for the ActiveSupport project which is
-# part of the Ruby On Rails web-framework (http://rubyonrails.org)
-#
-# Methods have been modified or removed. English inflection is now provided via
-# the english gem (http://english.rubyforge.org)
-#
-# sudo gem install english
-#
 gem 'english', '>=0.2.0'
 require 'english/inflect'
 
@@ -58,17 +50,6 @@ module LazyMapper
       # Creates a foreign key name from a class name.
       def foreign_key(class_name, key = "id")
         underscore(demodulize(class_name.to_s)) << "_" << key.to_s
-      end
-
-      # Constantize tries to find a declared constant with the name specified
-      # in the string. It raises a NameError when the name is not in CamelCase
-      # or is not initialized.
-      def constantize(camel_cased_word)
-        unless /\A(?:::)?([A-Z]\w*(?:::[A-Z]\w*)*)\z/ =~ camel_cased_word
-          raise NameError, "#{camel_cased_word.inspect} is not a valid constant name!"
-        end
-
-        Object.module_eval("::#{$1}", __FILE__, __LINE__)
       end
 
       # The reverse of pluralize, returns the singular form of a word in a string.

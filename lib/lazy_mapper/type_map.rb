@@ -14,11 +14,7 @@ module LazyMapper
     end
 
     def lookup(type)
-      if type_mapped?(type)
-        lookup_from_map(type)
-      else
-        lookup_by_type(type)
-      end
+      lookup_from_map(type)
     end
 
     def lookup_from_map(type)
@@ -31,16 +27,6 @@ module LazyMapper
       else
         {}
       end
-    end
-
-    def lookup_by_type(type)
-      raise "TypeMap Exception: type #{type} must have a default primitive or type map entry" unless type.respond_to?(:primitive) && !type.primitive.nil?
-
-      lookup(type.primitive).merge(Type::PROPERTY_OPTIONS.each_with_object({}) do |h, k|
-        h[k] = type.send(k)
-        h
-      end
-                                  )
     end
 
     alias_method '[]', 'lookup'

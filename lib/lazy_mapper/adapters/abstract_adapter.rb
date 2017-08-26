@@ -10,26 +10,6 @@ module LazyMapper
       attr_reader :name, :uri
       attr_accessor :resource_naming_convention, :field_naming_convention
 
-      # methods dealing with transactions
-
-      #
-      # Pushes the given Transaction onto the per thread Transaction stack so
-      # that everything done by this Adapter is done within the context of said
-      # Transaction.
-      #
-      def push_transaction(transaction)
-        @transactions[Thread.current] << transaction
-      end
-
-      #
-      # Pop the 'current' Transaction from the per thread Transaction stack so
-      # that everything done by this Adapter is no longer necessarily within the
-      # context of said Transaction.
-      #
-      def pop_transaction
-        @transactions[Thread.current].pop
-      end
-
       #
       # Retrieve the current transaction for this Adapter.
       #
@@ -80,28 +60,6 @@ module LazyMapper
     end
   end
   class Reader
-    attr_reader :fields
-
-    def fields=(value)
-      @fields << value
-    end
-
-    def values
-      raise NotImplementedError.new
-    end
-
-    def close
-      raise NotImplementedError.new
-    end
-
-    # Moves the cursor forward.
-    def next!
-      raise NotImplementedError.new
-    end
-
-    def initialize
-      @fields = []
-    end
   end
   class Result
     attr_accessor :insert_id, :affected_rows
@@ -140,34 +98,6 @@ module LazyMapper
     def self.new(uri)
       uri = uri.is_a?(String) ? Addressable::URI.parse(uri) : uri
       LazyMapper.const_get(uri.scheme.capitalize)::Connection.acquire(uri)
-    end
-
-    def self.acquire(connection_uri)
-      conn = nil
-      connection_string = connection_uri.to_s
-
-      @connection_lock.synchronize do
-        if !@available_connections[connection_string].empty?
-          conn = allocate
-          conn.send(:initialize, connection_uri)
-          at_exit { conn.real_close }
-        else
-          conn = @available_connections[connection_string].pop
-        end
-
-        @reserved_connections << conn
-      end
-
-      conn
-    end
-
-    def self.release(connection)
-      @connection_lock.synchronize do
-        if @reserved_connections.delete?(connection)
-          @available_connections[connection.to_s] << connection
-        end
-      end
-      nil
     end
 
     def close

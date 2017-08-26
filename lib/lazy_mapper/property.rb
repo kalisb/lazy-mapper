@@ -11,7 +11,7 @@ module LazyMapper
   class Property
     PROPERTY_OPTIONS = [ :key, :lazy, :serial]
 
-    attr_reader :model, :name, :type, :options, :length, :instance_variable_name
+    attr_reader :model, :name, :type, :options, :length, :instance_variable_name, :getter
 
     DEFAULT_LENGTH = 50
 
@@ -76,7 +76,6 @@ module LazyMapper
 
     # Loads lazy columns when get or set is called.
     def lazy_load(resource)
-      # TODO: refactor this section
       contexts = if lazy?
                    name
                  else
@@ -137,27 +136,27 @@ module LazyMapper
 
     # defines the getter for the property
     def create_getter
-      @model.class_eval <<-EOS, __FILE__, __LINE__
+      @model.class_eval <<-METHOD
         def #{@getter}
           #attr_accessor("#{@name.inspect}")
           attribute_get(#{name.inspect})
         end
-      EOS
+      METHOD
 
       if @primitive == TrueClass && !@model.instance_methods.include?(@name.to_s)
-        @model.class_eval <<-EOS, __FILE__, __LINE__
+        @model.class_eval <<-METHOD
           alias #{@name} #{@getter}
-        EOS
+        METHOD
       end
     end
 
     # defines the setter for the property
     def create_setter
-      @model.class_eval <<-EOS, __FILE__, __LINE__
+      @model.class_eval <<-METHOD
         def #{name}=(value)
           attribute_set(#{name.inspect}, value)
         end
-      EOS
+      METHOD
     end
   end
 end
