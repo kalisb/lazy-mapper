@@ -119,13 +119,16 @@ module LazyMapper
     end
 
     def limit(options = {})
-      options_map = {limit: options}
-      releation = LazyMapper::Relation.new(repository, self, options_map)
-      releation
+      add_to_releation("limit", options)
     end
 
     def offset(options = {})
-      options_map = {offset: options}
+      add_to_releation("offset", options)
+    end
+
+    def add_to_releation(key, value)
+      options_map = {}
+      options_map[key.to_sym] = value
       releation = LazyMapper::Relation.new(repository, self, options_map)
       releation
     end

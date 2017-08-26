@@ -27,22 +27,15 @@ module LazyMapper
         !current_transaction.nil?
       end
 
-      protected
-
-      def normalize_uri(uri_or_options)
-        uri_or_options
-      end
-
       private
 
       # Instantiate an Adapter by passing it a LazyMapper::Repository
       # connection string for configuration.
       def initialize(name, uri_or_options)
         raise ArgumentError, "+name+ should be a Symbol, but was #{name.class}", caller unless Symbol === name
-        raise ArgumentError, "+uri_or_options+ should be a Hash, a Addressable::URI or a String but was #{uri_or_options.class}", caller unless [ Hash, Addressable::URI, String ].any? { |k| k === uri_or_options }
 
         @name = name
-        @uri  = normalize_uri(uri_or_options)
+        @uri  = uri_or_options
         @transactions = Hash.new { |hash, key| hash[key] = [] }
 
         @resource_naming_convention = NamingConventions::UnderscoredAndPluralized

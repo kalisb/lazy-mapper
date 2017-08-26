@@ -31,14 +31,6 @@ module LazyMapper
         rows
       end
 
-      protected
-
-      def normalize_uri(uri_or_options)
-        uri = super
-        uri.path = File.join(Dir.pwd, File.dirname(uri.path), File.basename(uri.path)) unless File.exist?(uri.path) || uri.path == ':memory:'
-        uri
-      end
-
       private
 
       module SQL

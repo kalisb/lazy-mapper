@@ -70,13 +70,8 @@ module LazyMapper
         raise ArgumentError, "+child_model_name+ must be a String, but was #{child_model_name.class}", caller   unless String === child_model_name
         raise ArgumentError, "+parent_model_name+ must be a String, but was #{parent_model_name.class}", caller unless String === parent_model_name
 
-        if child_properties = options[:child_key]
-          raise ArgumentError, "+options[:child_key]+ must be an Array or nil, but was #{child_properties.class}", caller unless Array === child_properties
-        end
-
-        if parent_properties = options[:parent_key]
-          raise ArgumentError, "+parent_properties+ must be an Array or nil, but was #{parent_properties.class}", caller unless Array === parent_properties
-        end
+        child_properties = options[:child_key]
+        parent_properties = options[:parent_key]
 
         @name              = name
         @repository_name   = repository_name

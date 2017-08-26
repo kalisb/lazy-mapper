@@ -289,9 +289,8 @@ module LazyMapper
           EOS
         end
 
-        def query_read_statement(query)
+        def simple_select(query)
           qualify = query.links.any?
-
           statement = 'SELECT '
 
           statement << query.fields.map do |property|
@@ -300,32 +299,11 @@ module LazyMapper
           end.join(', ')
 
           statement << ' FROM ' << quote_table_name(query.model.storage_name(name))
+          statement
+        end
 
-          unless query.links.empty?
-            joins = []
-            query.links.each do |relationship|
-              child_model       = relationship.child_model
-              parent_model      = relationship.parent_model
-              child_model_name  = child_model.storage_name(name)
-              parent_model_name = parent_model.storage_name(name)
-              child_keys        = relationship.child_key.to_a
-              # We only do LEFT OUTER JOIN for now
-              s = ' LEFT OUTER JOIN '
-              s << quote_table_name(parent_model_name) << ' ON '
-              parts = []
-              relationship.parent_key.zip(child_keys) do |parent_key, child_key|
-                part = ''
-                part << property_to_column_name(parent_model_name, parent_key, qualify)
-                part << ' = '
-                part << property_to_column_name(child_model_name, child_key, qualify)
-                parts << part
-              end
-              s << parts.join(' AND ')
-              joins << s
-            end
-            statement << joins.join
-          end
-
+        def add_conditions(query, statement)
+          qualify = query.links.any?
           unless query.conditions.empty?
             statement << ' WHERE '
             statement << query.conditions.map do |operator, property, bind_value|
@@ -343,7 +321,11 @@ module LazyMapper
               end
             end.join(' AND ')
           end
+          statement
+        end
 
+        def add_order(query, statement)
+          qualify = query.links.any?
           unless query.order.empty?
             parts = []
             query.order.each do |item|
@@ -367,10 +349,15 @@ module LazyMapper
             end
             statement << " ORDER BY #{parts.join(', ')}"
           end
+          statement
+        end
 
+        def query_read_statement(query)
+          statement = simple_select(query)
+          statement = add_conditions(query, statement)
+          statement = add_order(query, statement)
           statement << " LIMIT #{query.limit}" if query.limit
           statement << " OFFSET #{query.offset}" if query.offset && query.offset > 0
-
           statement
         rescue => e
           LazyMapper.logger.error("QUERY INVALID: #{query.inspect} (#{e})")
@@ -490,25 +477,7 @@ module LazyMapper
           statement = "SELECT #{function_name}(#{column_name})"
           statement << ' FROM ' << quote_table_name(storage_name)
 
-          unless query.conditions.empty?
-            statement << ' WHERE '
-            statement << '(' if query.conditions.size > 1
-            statement << query.conditions.map do |operator, property, bind_value|
-              storage_name = property.model.storage_name(query.repository.name) if property && property.respond_to?(:model)
-              case operator
-              when :raw      then property
-              when :eql, :in then equality_operator(query, storage_name, operator, property, qualify, bind_value)
-              when :not      then inequality_operator(query, storage_name, operator, property, qualify, bind_value)
-              when :like     then "#{property_to_column_name(storage_name, property, qualify)} LIKE ?"
-              when :gt       then "#{property_to_column_name(storage_name, property, qualify)} > ?"
-              when :gte      then "#{property_to_column_name(storage_name, property, qualify)} >= ?"
-              when :lt       then "#{property_to_column_name(storage_name, property, qualify)} < ?"
-              when :lte      then "#{property_to_column_name(storage_name, property, qualify)} <= ?"
-              else raise "Invalid query operator: #{operator.inspect}"
-              end
-            end.join(') AND (')
-            statement << ')' if query.conditions.size > 1
-          end
+          statement =  add_conditions(query, statement)
 
           statement << " LIMIT #{query.limit}" if query.limit
           statement << " OFFSET #{query.offset}" if query.offset && query.offset > 0
