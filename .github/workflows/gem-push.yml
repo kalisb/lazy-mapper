@@ -27,6 +27,7 @@ jobs:
     - name: Build a gem
       run: |
         gem build *.gemspec
+        gem install
 
     - name: Run tests
       run: |
