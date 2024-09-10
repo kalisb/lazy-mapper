@@ -29,4 +29,6 @@ jobs:
         gem build *.gemspec
 
     - name: Run tests
-      run: rake test
+      run: |
+        gem install rake
+        rake test
