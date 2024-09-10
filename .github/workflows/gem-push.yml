@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build + Publish
+    name: Build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,7 +27,7 @@ jobs:
     - name: Build a gem
       run: |
         gem build *.gemspec
-        gem install lazy-mapper
+        gem install lazy_mapper
 
     - name: Run tests
       run: |
