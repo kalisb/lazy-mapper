@@ -27,7 +27,7 @@ jobs:
     - name: Build a gem
       run: |
         gem build *.gemspec
-        gem install
+        gem install lazy-mapper
 
     - name: Run tests
       run: |
