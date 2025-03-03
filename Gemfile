@@ -5,7 +5,7 @@ gemspec
 group :development do
   gem "sqlite3"
   gem "pg"
-  gem 'addressable'
+  gem 'addressable', '>= 2.8.0'
   gem 'json'
   gem 'simplecov'
   gem 'english', '>=0.2.0'
